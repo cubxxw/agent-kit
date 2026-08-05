@@ -58,10 +58,14 @@ Context-isolated forward evidence for finding 9:
   competing direction/architecture paths;
 - the public Talent Signal regression independently identified the current
   leaf-first failure, backtracked to the product invariant, produced
-  `The Redline` versus `The Decision Window`, and stopped before implementation
-  pending rendered A/B comparison;
+  `The Redline` versus `The Decision Window`, rendered both surviving
+  compositions, selected the split evidence ledger, and shipped that structure
+  as a production-ready Draft PR;
+- the implemented proof passed lint, typecheck, 43 tests, documentation checks,
+  and a production build, while evidence removal visibly retracted unsupported
+  state and revised the next action;
 - neither test modified the target repository or saw this review’s intended
-  answer.
+  answer during the context-isolated evaluation phase.
 
 ## Why three points remain open
 
