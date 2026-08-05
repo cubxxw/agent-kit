@@ -11,6 +11,8 @@ from unittest.mock import patch
 from agentkit.core import (
     AgentKitError,
     install_links,
+    load_catalog,
+    resolve_profile,
     scan_public_tree,
     uninstall_links,
     validate_catalog,
@@ -63,6 +65,12 @@ class AgentKitTests(unittest.TestCase):
                 ]
                 self.assertTrue(all(path.is_symlink() for path in destinations))
                 self.assertEqual(1, len({path.resolve() for path in destinations}))
+
+    def test_top_profile_contains_every_adopted_skill(self) -> None:
+        catalog = load_catalog()
+        names = [entry["name"] for entry in catalog["skills"]]
+        self.assertEqual(names, resolve_profile(catalog, "top"))
+        self.assertEqual(names, resolve_profile(catalog, "all"))
 
     def test_installer_refuses_existing_directory(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

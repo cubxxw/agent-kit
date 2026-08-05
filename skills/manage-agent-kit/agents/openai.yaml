@@ -1,4 +1,4 @@
 interface:
   display_name: "Manage Agent Kit"
-  short_description: "Sync reviewed skills across coding agents"
-  default_prompt: "Use $manage-agent-kit to safely initialize or upgrade this machine’s coding-agent skills."
+  short_description: "Sync and curate top skills across agents"
+  default_prompt: "Use $manage-agent-kit to audit this machine, discover or curate the right skills, preview safe changes, and verify every managed host."

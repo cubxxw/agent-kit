@@ -88,6 +88,11 @@ supply-chain surface. A skill enters the catalog only when:
 That is why Agent Kit adopts selected standalone skills rather than mirroring
 every popular pack.
 
+Breadth belongs in a radar, not the global prompt. The
+[`Top Skills Radar`](top-skills.md) can index official, specialist, and
+community sources without installing them. The `top` profile contains only
+the narrow set that passed every gate.
+
 ## Lessons adopted from the named projects
 
 ### CC Switch
@@ -147,6 +152,32 @@ Deferred:
 - skills that depend on repository-level shared references when a standalone
   install would omit those references.
 
+### Taste Skill
+
+Source: [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill)
+
+Adopted at commit `e988add20dab0fa97d7a76781c48961c8184288e`:
+
+- `design-taste-frontend` for landing pages, portfolios, and redesigns;
+- brief inference before aesthetic choice;
+- explicit variance, motion, and density controls;
+- audit-first redesign behavior and a mechanical preflight.
+
+Boundary retained:
+
+- the upstream v2 is experimental and remains fully pinned;
+- it is not a dashboard or dense product-UI skill;
+- its unpinned dependency examples are advisory only and do not grant package
+  installation authority;
+- the 1,206-line body loads only when its narrow trigger matches.
+
+Review result:
+
+- MIT license preserved and no executable files;
+- vendored `SKILL.md` byte-matches the pinned upstream subtree;
+- NVIDIA SkillSpector 2.5.3 static scan returned `SAFE`, score 18, with
+  findings manually triaged.
+
 ### Open skills CLI
 
 Source: [vercel-labs/skills](https://github.com/vercel-labs/skills)
@@ -188,4 +219,7 @@ goals, loops, and persistent routines, see
 - [UI UX Pro Max README](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
 - [Addy Osmani Agent Skills README](https://github.com/addyosmani/agent-skills)
 - [Open skills CLI](https://github.com/vercel-labs/skills)
+- [Top Skills Radar](top-skills.md)
+- [Taste Skill](https://github.com/Leonxlnx/taste-skill)
+- [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector)
 - [Agent Skills specification](https://agentskills.io/specification)

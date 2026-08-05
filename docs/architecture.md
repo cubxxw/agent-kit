@@ -23,6 +23,17 @@ license, source path, commit pin, and tree pin.
 Keeping accepted skills under `skills/` also makes the same repository
 discoverable by CC Switch custom repositories and the open `skills` CLI.
 
+## Installed catalog versus broad radar
+
+`catalog.json` controls installed capabilities. The `top` profile is the
+curated-complete view of broadly useful, fully audited skills; `all` remains a
+compatibility alias.
+
+`docs/top-skills.md` is a non-installing discovery layer. It can index many
+official, specialist, and community sources without adding their descriptions
+to every agent, expanding update surface, or transferring trust from a
+repository to every nested skill.
+
 ## Portability boundary
 
 | Layer | Strategy |

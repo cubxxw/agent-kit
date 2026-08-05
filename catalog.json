@@ -19,12 +19,13 @@
       ]
     },
     "design": {
-      "description": "Base plus reviewed UI and UX design intelligence.",
+      "description": "Base plus reviewed UI/UX intelligence and frontend taste.",
       "extends": [
         "base"
       ],
       "skills": [
-        "ui-ux-pro-max"
+        "ui-ux-pro-max",
+        "design-taste-frontend"
       ]
     },
     "full-stack": {
@@ -35,10 +36,17 @@
       ],
       "skills": []
     },
-    "all": {
-      "description": "Every skill currently accepted into the catalog.",
+    "top": {
+      "description": "Every broadly useful skill that has passed the full adoption gate.",
       "extends": [
         "full-stack"
+      ],
+      "skills": []
+    },
+    "all": {
+      "description": "Every skill currently accepted into the catalog; retained as a compatibility alias.",
+      "extends": [
+        "top"
       ],
       "skills": []
     }
@@ -90,6 +98,20 @@
         "track": "main",
         "ref": "4d140cf8ff6842de13213c7214eff3810371beb2",
         "tree_sha": "3d66a0486c1000e6da51da67b0cb917be22ea8dd",
+        "license_path": "LICENSE"
+      }
+    },
+    {
+      "name": "design-taste-frontend",
+      "path": "skills/design-taste-frontend",
+      "license": "MIT",
+      "source": {
+        "type": "vendored",
+        "repository": "Leonxlnx/taste-skill",
+        "path": "skills/taste-skill",
+        "track": "main",
+        "ref": "e988add20dab0fa97d7a76781c48961c8184288e",
+        "tree_sha": "a6d128e53b4ec0238baee751dde33bf707adb5ec",
         "license_path": "LICENSE"
       }
     }

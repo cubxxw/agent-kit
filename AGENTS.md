@@ -7,6 +7,8 @@ This is a public repository. Treat every tracked byte as internet-visible.
 - Use environment-variable names in examples; never include real values.
 - Keep `catalog.json` as the source of truth for accepted skills and upstream
   pins.
+- Treat `docs/top-skills.md` as a discovery radar, not an installation list.
+  Add only a named skill that passes the full curation gate.
 - Preserve third-party license files and attribution.
 - Do not overwrite an existing user skill directory. The installer must fail
   safely on conflicts.

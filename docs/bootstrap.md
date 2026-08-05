@@ -91,8 +91,9 @@ For an agent that is not a native target, use the open skills CLI after
 browsing the catalog:
 
 ```sh
-npx skills add cubxxw/agent-kit --list
-npx skills add cubxxw/agent-kit --global --agent <agent-id> --skill '*' --yes
+npm exec --yes --package=skills@1.5.21 -- skills add cubxxw/agent-kit --list
+npm exec --yes --package=skills@1.5.21 -- \
+  skills add cubxxw/agent-kit --global --agent <agent-id> --skill '*' --yes
 ```
 
 Do not install Node.js, a package manager, or another system dependency

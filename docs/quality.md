@@ -17,9 +17,9 @@ Release target: at least 95/100 with observable evidence.
 | Positioning and 60-second onboarding | 15 | One outcome-led hero, one universal handoff sentence, one recommended path | 15 |
 | Cross-agent interoperability | 20 | Six native host adapters; open skills CLI and CC Switch discovery from one `skills/` tree | 19 |
 | Safety, privacy, and recovery | 20 | Dry-run, conflict refusal, fast-forward-only bootstrap, owned-link uninstall, public guard | 20 |
-| Source and supply-chain integrity | 15 | Full commit/tree pins, licenses in every distributed skill, executable review ledger | 14 |
+| Source and supply-chain integrity | 15 | Full commit/tree pins, licenses, executable review ledger, independent optional static scan | 14 |
 | Verification and evidence loops | 15 | Unit tests, strict doctor, data validation, host status, CI, final report contract | 15 |
-| Context economy and maintainability | 10 | Profiles, progressive disclosure, small catalog, weekly subtree drift, dated research | 9 |
+| Context economy and maintainability | 10 | Profiles, broad non-installing radar, small catalog, weekly subtree drift, dated research | 9 |
 | README trust and star-worthiness | 5 | Clear hierarchy, badges, honest support boundaries, useful companion integrations | 5 |
 | **Total** | **100** |  | **97** |
 
@@ -41,6 +41,11 @@ Release target: at least 95/100 with observable evidence.
    rather than mirroring entire upstream packs.
 6. **Quality was asserted but not tied to README conversion or the universal
    handoff.** Replaced the old rubric with this evidence-based review.
+7. **“Top” could have become a bulk-install dump.** Separated a broad,
+   categorized discovery radar from the narrow, fully audited `top` profile.
+8. **Frontend knowledge lacked an execution-judgment layer.** Added the pinned,
+   no-script `design-taste-frontend` beside the complementary UI/UX database
+   and recorded an independent static scan.
 
 ## Why three points remain open
 
