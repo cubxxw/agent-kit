@@ -204,6 +204,21 @@ Encoded as infrastructure:
 - user rejection invalidates a distinctiveness claim and triggers
   backtracking, not another micro-detail pass.
 
+Production evidence:
+
+- `The Redline` beat `The Decision Window` at the brand-theorem fork;
+- one governed conversation beat a persistent recruiter workbench at the
+  architecture fork;
+- a split evidence ledger beat transcript-with-margin-decisions after both
+  compositions were rendered at desktop and mobile sizes;
+- the implemented interaction made source removal retract the unsupported
+  relationship state and revise the next action;
+- lint, typecheck, 43 tests, documentation checks, and the production build
+  passed independently of the design selection.
+
+The result is evidence that the workflow can reach production safely. It is not
+an absolute taste score or a substitute for future user preference.
+
 ### Open skills CLI
 
 Source: [vercel-labs/skills](https://github.com/vercel-labs/skills)

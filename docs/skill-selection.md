@@ -23,8 +23,10 @@ small.
   and raw tasks. The generic B2B case rejected another polish pass and produced
   two product-derived directions. The real Talent Signal regression
   backtracked from D5 to D0-D2, chose `The Redline` over
-  `The Decision Window`, retained a challenger, and required rendered D3
-  comparison before code.
+  `The Decision Window`, retained a challenger, rendered two D3 compositions,
+  and selected the split evidence ledger before code. The production result
+  made clause removal retract dependent state and revise the proposed action
+  while keeping fact confirmation separate from external-action approval.
 
 ### Anthropic `mcp-builder`
 
