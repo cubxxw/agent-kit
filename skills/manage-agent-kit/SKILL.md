@@ -25,7 +25,8 @@ Use the smallest applicable profile:
 
 - `base`: only this management skill.
 - `developer`: source-grounded engineering and agent infrastructure.
-- `design`: reviewed UI/UX intelligence and frontend taste.
+- `design`: recursive direction branching, UI/UX evidence, and frontend
+  preflight.
 - `full-stack`: recommended personal workstation.
 - `top`: every broadly useful skill that passed the full adoption gate.
 - `all`: compatibility alias for `top`.

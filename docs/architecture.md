@@ -34,6 +34,25 @@ official, specialist, and community sources without adding their descriptions
 to every agent, expanding update surface, or transferring trust from a
 repository to every nested skill.
 
+## Design stack: direction, evidence, preflight
+
+The design profile separates three jobs that should not be collapsed:
+
+```text
+deepen-design
+  product truth → binary directions → architectures → rendered comparison
+        ↓
+ui-ux-pro-max
+  searchable patterns, palettes, UX guidance, and stack constraints
+        ↓
+design-taste-frontend
+  anti-slop and implementation preflight
+```
+
+The first layer is first-party because no third-party rule set can infer the
+user’s ownable product argument by itself. Vendored skills remain byte-stable
+and independently updatable.
+
 ## Portability boundary
 
 | Layer | Strategy |

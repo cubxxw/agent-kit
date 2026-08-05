@@ -36,6 +36,21 @@ Use this acceptance order:
 Rejected and deferred candidates belong in `docs/skill-selection.md`, not in
 the active catalog.
 
+## Learning from real use
+
+Treat explicit user rejection as higher-quality evidence than a self-authored
+score. When an accepted skill produces a repeated failure:
+
+1. preserve the raw prompt, output, diff, and screenshots outside the public
+   repository when they are private;
+2. identify the earliest wrong decision, not only the final visible defect;
+3. keep vendored upstream content byte-stable;
+4. encode the correction in a concise first-party orchestration skill,
+   reference, test, or validator;
+5. forward-test with a fresh Agent that receives the raw task, not the intended
+   diagnosis;
+6. update the selection ledger with the observed limitation.
+
 ## Maintaining the Top Skills Radar
 
 Review `docs/top-skills.md` monthly and when a user proposes a new source.
@@ -82,6 +97,8 @@ Uninstall removes only links that resolve to the current checkout.
 
 - Unit tests pass.
 - Skill creator validation passes for first-party skills.
+- Substantial first-party workflow changes pass a context-isolated forward
+  test on a realistic artifact.
 - `doctor --strict` passes.
 - Vendor pins are full SHAs.
 - Third-party licenses and notices remain present.

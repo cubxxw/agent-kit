@@ -167,6 +167,7 @@ Boundary retained:
 
 - the upstream v2 is experimental and remains fully pinned;
 - it is not a dashboard or dense product-UI skill;
+- it is an anti-slop linter, not proof of an ownable design direction;
 - its unpinned dependency examples are advisory only and do not grant package
   installation authority;
 - the 1,206-line body loads only when its narrow trigger matches.
@@ -177,6 +178,31 @@ Review result:
 - vendored `SKILL.md` byte-matches the pinned upstream subtree;
 - NVIDIA SkillSpector 2.5.3 static scan returned `SAFE`, score 18, with
   findings manually triaged.
+
+### Recursive design depth
+
+Source: real use of the adopted design stack on
+[getyak/talent-signal](https://github.com/getyak/talent-signal).
+
+Observed:
+
+- build, responsive, accessibility, and Lighthouse evidence proved functional
+  quality but not visual distinction;
+- a self-authored 98/100 rubric overstated brand specificity;
+- the refinement spent most of its visible effort on borders, shadows,
+  background treatments, typography values, and hover motion while keeping the
+  same direction;
+- a negative-rule skill can replace obvious AI slop with a different,
+  polished template.
+
+Encoded as infrastructure:
+
+- first-party `deepen-design` runs before the design data and preflight skills;
+- every consequential design fork has two materially different branches;
+- page direction is selected from rendered A/B evidence, not prose;
+- functional gates and design judgment use separate ledgers;
+- user rejection invalidates a distinctiveness claim and triggers
+  backtracking, not another micro-detail pass.
 
 ### Open skills CLI
 

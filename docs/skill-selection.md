@@ -5,6 +5,27 @@ small.
 
 ## Adopted
 
+### First-party `deepen-design`
+
+- Source: `cubxxw/agent-kit`, created from a real rejected design iteration.
+- Decision: installed before the two third-party design skills in the
+  `design`, `full-stack`, and `top` profiles.
+- Why: a polished Talent Signal iteration passed build, accessibility,
+  responsive, performance, and self-authored 98/100 checks but remained
+  visually generic. The execution changed hundreds of CSS lines while keeping
+  the same product argument and page grammar.
+- Role: force product invariant → two brand theorems → two architectures →
+  rendered A/B directions → system → micro-detail. It uses bounded binary
+  branching, pairwise evidence, a surviving challenger, and backtracking.
+- Boundary: it does not replace UI/UX data or frontend preflight. It decides
+  direction before those tools constrain implementation.
+- Forward test: two context-isolated, read-only Agents received only the Skill
+  and raw tasks. The generic B2B case rejected another polish pass and produced
+  two product-derived directions. The real Talent Signal regression
+  backtracked from D5 to D0-D2, chose `The Redline` over
+  `The Decision Window`, retained a challenger, and required rendered D3
+  comparison before code.
+
 ### Anthropic `mcp-builder`
 
 - Source: `anthropics/skills`, `skills/mcp-builder`
@@ -61,6 +82,11 @@ small.
   MIT license wording).
 - Stability: upstream calls v2 experimental, so Agent Kit pins it and never
   auto-updates it.
+- Real-use correction: treat it as an anti-slop preflight, not a generative
+  design authority. Its negative rules removed obvious clichés but did not
+  force divergent concepts, visual A/B evidence, or product-derived
+  ownability. The first-party `deepen-design` workflow now supplies that
+  missing layer without changing the byte-preserved upstream skill.
 
 ## Top Skills Radar
 

@@ -21,15 +21,18 @@ adoption gate. The radar can be broad because it installs nothing.
 | Skill | Source | Role |
 |---|---|---|
 | `manage-agent-kit` | `cubxxw/agent-kit` | Safe cross-agent initialization, upgrades, and curation |
+| `deepen-design` | `cubxxw/agent-kit` | Recursive direction branching, pairwise visual critique, and backtracking before polish |
 | `mcp-builder` | [`anthropics/skills`](https://github.com/anthropics/skills) | MCP server design and evaluation |
 | `source-driven-development` | [`addyosmani/agent-skills`](https://github.com/addyosmani/agent-skills) | Implementation grounded in current official sources |
 | `ui-ux-pro-max` | [`nextlevelbuilder/ui-ux-pro-max-skill`](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | Searchable UI/UX data and stack guidance |
-| `design-taste-frontend` | [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill) | Brief-aware anti-template frontend judgment and preflight |
+| `design-taste-frontend` | [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill) | Anti-template frontend constraints and final preflight |
 
+`deepen-design` answers “which product-derived direction should exist?”
 `ui-ux-pro-max` answers “what patterns, palettes, stacks, and constraints fit?”
-`design-taste-frontend` answers “how should this landing page or portfolio be
-composed and reviewed?” They are complementary. The latter explicitly excludes
-dense dashboards and multi-step product UI.
+`design-taste-frontend` answers “which familiar frontend mistakes remain?”
+They are complementary. The latter is a preflight linter, not a substitute for
+divergent direction work, and explicitly excludes dense dashboards and
+multi-step product UI.
 
 ## Official and product-owned sources
 
@@ -63,7 +66,7 @@ have higher overlap and triggering risk than narrow specialist skills.
 | [`mattpocock/skills`](https://github.com/mattpocock/skills) | Grilling, domain language, planning, diagnosis, handoff, and focused engineering workflows | Watch and adopt narrowly; do not install the entire methodology beside overlapping hosts |
 | [`obra/superpowers`](https://github.com/obra/superpowers) | Coherent end-to-end development methodology with verification and review loops | Use as its own framework, not mixed into Agent Kit defaults |
 | [`emilkowalski/skills`](https://github.com/emilkowalski/skills) | Design engineering and motion judgment | On-demand design candidate |
-| [`pbakaus/impeccable`](https://github.com/pbakaus/impeccable) | Interface design language and anti-slop review | Watch for overlap with the adopted design pair |
+| [`pbakaus/impeccable`](https://github.com/pbakaus/impeccable) | Interface design language and anti-slop review | Watch for overlap with the adopted design stack |
 | [`trailofbits/skills`](https://github.com/trailofbits/skills) | Security research and audit workflows | Excellent specialist source; review CC-BY-SA obligations |
 | [`coreyhaines31/marketingskills`](https://github.com/coreyhaines31/marketingskills) | CRO, SEO, analytics, copy, and growth | Project-scoped; overlaps Brain’s private content skills |
 | [`JimLiu/baoyu-skills`](https://github.com/JimLiu/baoyu-skills) | Chinese content, URL ingestion, transcripts, images, and publishing workflows | Keep Brain-specific installs repository-scoped |
