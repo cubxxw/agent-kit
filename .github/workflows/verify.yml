@@ -19,3 +19,5 @@ jobs:
         run: python3 -m unittest discover -s tests -v
       - name: Validate skills and public boundary
         run: ./bin/agent-kit doctor --strict
+      - name: Validate UI/UX skill datasets
+        run: python3 skills/ui-ux-pro-max/scripts/validate_data.py

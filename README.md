@@ -1,106 +1,234 @@
-# agent-kit
+<div align="center">
 
-One public, versioned source for personal Agent Skills and portable agent
-configuration. Codex and Claude Code use the same skill files instead of two
-copies that drift.
+<h1>agent-kit</h1>
 
-## What it solves
+<p><strong>One public source of truth for every coding agent.</strong></p>
 
-- One canonical `SKILL.md` tree for Codex and Claude Code.
-- Safe, idempotent installation on a laptop or a new server.
-- Refusal to overwrite existing skills or foreign symlinks.
-- Pinned, licensed third-party skills with an explicit review trail.
-- Public-repository guards for secrets and machine-local paths.
-- Weekly upstream-drift checks and a reviewed vendor-update path.
+<p>
+Bootstrap or upgrade a clean, reviewed Agent Skills setup on any laptop or
+server—without copying the same skills six times, overwriting local config, or
+putting secrets in Git.
+</p>
+
+[![Verify](https://github.com/cubxxw/agent-kit/actions/workflows/verify.yml/badge.svg)](https://github.com/cubxxw/agent-kit/actions/workflows/verify.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-0f766e.svg)](LICENSE)
+[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-111827.svg)](https://agentskills.io/specification)
+[![Public by design](https://img.shields.io/badge/public-safe%20by%20design-2563eb.svg)](SECURITY.md)
+
+[Give this to your agent](#give-this-to-your-agent) ·
+[Install](#install) ·
+[Profiles](#profiles) ·
+[CC Switch](#agent-kit--cc-switch) ·
+[Engineering guide](docs/best-practices.md)
+
+</div>
+
+## Give this to your agent
+
+> [!TIP]
+> Paste this single sentence into Claude Code, Codex, Qwen Code, OpenCode, Pi,
+> OpenClaw, or another shell-capable coding agent:
+
+```text
+Open https://github.com/cubxxw/agent-kit/blob/main/docs/bootstrap.md and follow it end to end to safely initialize or fast-forward upgrade this machine for the current agent; preserve existing configuration and secrets, preview every change, run the verification gates, and report conflicts instead of forcing them.
+```
+
+That is the whole handoff. The protocol tells the agent how to detect its host,
+pick a profile, protect existing state, install, verify, and report evidence.
+
+## Why agent-kit
+
+Agent setup usually drifts in three places: copied skills diverge, private
+runtime config leaks into dotfiles, and a bootstrap script silently replaces
+something important. Agent Kit gives those concerns explicit boundaries:
+
+- **One canonical skill tree.** Every supported host sees the same reviewed
+  files through symlinks.
+- **Safe repetition.** Install and upgrade are idempotent, dry-runnable, and
+  refuse copied directories or foreign links.
+- **Small, curated profiles.** Popularity helps discovery; license, current
+  value, non-overlap, and executable review decide acceptance.
+- **Public/private separation.** Skills, safe instructions, hooks, source pins,
+  and templates can be public. Keys, auth, models, sessions, and machine state
+  stay local.
+- **Verification before trust.** Catalog validation, tests, public-boundary
+  scanning, source pins, and host status are part of “done.”
 
 ## Install
+
+### Native installer
+
+Best for a machine you control. `core` means Claude Code + Codex; select one
+host by name when the agent should configure only itself.
 
 ```sh
 git clone https://github.com/cubxxw/agent-kit.git "$HOME/.agent-kit"
 cd "$HOME/.agent-kit"
+
 ./bin/agent-kit doctor --strict
-./bin/agent-kit install --profile developer --tool all
-./bin/agent-kit status --profile developer --tool all
+./bin/agent-kit install --profile full-stack --tool core --dry-run
+./bin/agent-kit install --profile full-stack --tool core
+./bin/agent-kit status --profile full-stack --tool core
 ```
 
-For an unattended base setup after cloning:
+Supported native targets:
+
+| Agent | `--tool` | Default skill directory |
+|---|---|---|
+| Claude Code | `claude` | `~/.claude/skills` |
+| Codex | `codex` | `~/.agents/skills` |
+| Qwen Code | `qwen` | `~/.qwen/skills` |
+| OpenCode | `opencode` | `~/.config/opencode/skills` |
+| Pi | `pi` | `~/.pi/agent/skills` |
+| OpenClaw | `openclaw` | `~/.openclaw/skills` |
+
+Use `--tool all` only when you intentionally want views for all six hosts.
+
+### Open skills ecosystem
+
+The open [`skills`](https://github.com/vercel-labs/skills) CLI reaches 70+
+agent integrations and discovers every accepted Agent Kit skill under
+`skills/`.
 
 ```sh
-AGENT_KIT_PROFILE=developer ./scripts/bootstrap.sh
+# Browse before installing
+npx skills add cubxxw/agent-kit --list
+
+# Example: install every accepted skill for one host
+npx skills add cubxxw/agent-kit --global --agent qwen-code --skill '*' --yes
 ```
 
-The installer creates these views:
-
-| Host | Discovery directory | Source |
-|---|---|---|
-| Codex | `~/.agents/skills/<name>` | symlink to this checkout |
-| Claude Code | `~/.claude/skills/<name>` | symlink to this checkout |
-
-Both hosts follow skill-directory symlinks. Changes in the checkout therefore
-reach both without copying files.
+Replace `qwen-code` with `claude-code`, `codex`, `opencode`, `pi`, `openclaw`,
+or another supported agent identifier.
 
 ## Profiles
 
-| Profile | Contents | Intended use |
+| Profile | Contents | Use it for |
 |---|---|---|
-| `base` | `manage-agent-kit` | Every machine |
-| `developer` | `base` + `mcp-builder` | Coding and agent infrastructure |
-| `all` | Every accepted catalog entry | Explicit full install |
+| `base` | `manage-agent-kit` | Minimal server or first bootstrap |
+| `developer` | base + `mcp-builder` + `source-driven-development` | Backend, infra, MCP, and source-grounded engineering |
+| `design` | base + `ui-ux-pro-max` | UI/UX design and review |
+| `full-stack` | developer + design | Recommended personal workstation |
+| `all` | every accepted catalog entry | Explicit complete install |
 
-`catalog.json` is the source of truth. A small catalog is intentional: a skill
-must add current, repeated value and pass license and security review.
+[`catalog.json`](catalog.json) is the source of truth. Every third-party entry
+records its repository, upstream directory, full commit SHA, tree SHA, and
+license.
 
-## Common operations
+## How one source reaches every agent
 
-```sh
-# Preview without writing
-./bin/agent-kit install --profile developer --tool all --dry-run
-
-# Validate the public boundary and skill catalog
-./bin/agent-kit doctor --strict
-
-# Check whether a vendored source moved
-./scripts/check_upstreams.py
-
-# Update only after reviewing an exact upstream commit
-./scripts/update_vendor.py mcp-builder --ref <full-reviewed-sha>
-
-# Remove only links owned by this checkout
-./bin/agent-kit uninstall --profile developer --tool all
+```mermaid
+flowchart LR
+    G["GitHub: cubxxw/agent-kit"] --> C["Local canonical checkout"]
+    C --> K["catalog.json profiles"]
+    K --> S["skills/&lt;name&gt;"]
+    S --> A["Claude Code"]
+    S --> B["Codex"]
+    S --> Q["Qwen Code"]
+    S --> O["OpenCode"]
+    S --> P["Pi"]
+    S --> W["OpenClaw"]
 ```
 
-## What is shared and what stays local
+The host directories are discovery views, not storage. Editing or
+fast-forwarding the canonical checkout updates every managed link.
 
-Shared:
+## Agent Kit + CC Switch
 
-- Agent Skills;
-- portable instructions;
-- hook logic and safe configuration examples;
-- MCP server names, URLs, and required environment-variable names;
-- source pins, licenses, and maintenance policy.
+These projects solve different layers and work well together:
 
-Local only:
+| Layer | Use | What belongs there |
+|---|---|---|
+| **Agent Kit** | Public, versioned capability layer | Skills, safe instructions, hook logic, source pins, server bootstrap |
+| **[CC Switch](https://github.com/farion1231/cc-switch)** | Private local runtime layer | Providers, API endpoints, keys, models, MCP state, sessions, backups |
 
-- API keys, OAuth state, cookies, tokens, and auth files;
-- model and billing choices;
-- approval decisions and workspace trust;
-- transcripts, memories, caches, and private knowledge;
-- machine-specific overrides.
+In CC Switch, open **Skills → Repository Management → Add Repository**, then
+use:
 
-The files under `config/` are mergeable examples, not replacements for an
-existing `settings.json` or `config.toml`.
+```text
+Owner: cubxxw
+Name: agent-kit
+Branch: main
+Subdirectory: skills
+```
 
-## Design basis
+For one shared source, select `~/.agents/skills` as the CC Switch skill storage
+location and use symlink distribution. Keep provider credentials and CC Switch
+cloud-sync data out of this repository.
 
-The layout follows the [Agent Skills specification](https://agentskills.io/specification).
-Codex loads user skills from `~/.agents/skills`; Claude Code loads personal
-skills from `~/.claude/skills`. Both support symlinked skill directories.
+## What is shared—and what never is
 
-See [architecture](docs/architecture.md), [maintenance](docs/maintenance.md),
-[skill selection](docs/skill-selection.md), and the
-[quality gate](docs/quality.md).
+| Safe to version | Keep local |
+|---|---|
+| Agent Skills and supporting data | API keys, tokens, cookies, OAuth state |
+| Durable public instructions | Provider, model, billing, and routing choices |
+| Deterministic hook logic | Approval history and workspace trust |
+| MCP names and environment-variable names | Actual environment-variable values |
+| Safe config examples | Sessions, memories, transcripts, caches |
+| Source pins, licenses, review records | Private knowledge and machine overrides |
+
+Files under [`config/`](config/) are mergeable examples. They are never a
+license to replace an existing `settings.json`, `config.toml`, or agent
+instruction file.
+
+## The engineering practices behind it
+
+Agent Kit turns recurring corrections into infrastructure:
+
+1. Keep resident context small; load detailed guidance only when it is needed.
+2. Encode repeated mistakes as a rule, test, hook, skill, or script.
+3. Make every completion claim return with observable evidence.
+4. Preview first, preserve conflicts, and keep changes reversible.
+5. Automate the deterministic path; reserve model judgment for real decisions.
+6. Review third-party skill code, license, overlap, and source pin before use.
+
+The dated research and trade-offs are documented in
+[`docs/best-practices.md`](docs/best-practices.md), drawing from
+[Boris Cherny’s workflow thread](https://x.com/bcherny/status/2007179832300581177),
+the evolving [How Boris Uses Claude Code](https://howborisusesclaudecode.com/),
+[CC Switch](https://github.com/farion1231/cc-switch),
+[UI UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill), and
+[Addy Osmani’s Agent Skills](https://github.com/addyosmani/agent-skills).
+
+## Operate it
+
+```sh
+# Safe preview
+./bin/agent-kit install --profile full-stack --tool core --dry-run
+
+# Validate repository, catalog, licenses, and public boundary
+./bin/agent-kit doctor --strict
+
+# Check managed links
+./bin/agent-kit status --profile full-stack --tool core
+
+# Check whether a pinned upstream skill directory changed
+./scripts/check_upstreams.py
+
+# Remove only links owned by this checkout
+./bin/agent-kit uninstall --profile full-stack --tool core --dry-run
+```
+
+For unattended provisioning, set `AGENT_KIT_PROFILE` and `AGENT_KIT_TOOL`, then
+run [`scripts/bootstrap.sh`](scripts/bootstrap.sh). It only fast-forwards a
+clean checkout.
+
+## Trust, maintenance, and quality
+
+- [Architecture](docs/architecture.md)
+- [Bootstrap protocol](docs/bootstrap.md)
+- [Maintenance runbook](docs/maintenance.md)
+- [Skill selection ledger](docs/skill-selection.md)
+- [Boris-style quality review](docs/quality.md)
+- [Security policy](SECURITY.md)
+- [Third-party notices](THIRD_PARTY_NOTICES.md)
+
+If this saves you from maintaining the same agent setup six times, consider
+starring the repository. It makes the project easier to find without making
+the catalog any less selective.
 
 ## License
 
 First-party code and documentation are MIT licensed. Vendored skills retain
-their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
+their upstream licenses and attribution; see
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

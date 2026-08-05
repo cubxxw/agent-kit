@@ -1,0 +1,2 @@
+# Preserve reviewed vendored sources byte-for-byte with their pinned upstream.
+skills/ui-ux-pro-max/** -whitespace

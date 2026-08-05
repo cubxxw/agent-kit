@@ -87,6 +87,21 @@ def extract_subtree(archive: bytes, source_path: str, destination: Path) -> None
         raise SystemExit(f"No valid skill found at upstream path '{source_path}'")
 
 
+def extract_file(archive: bytes, source_path: str, destination: Path) -> None:
+    """Extract one repository-relative file from a GitHub source archive."""
+    source_parts = PurePosixPath(source_path).parts
+    with zipfile.ZipFile(io.BytesIO(archive)) as bundle:
+        for info in bundle.infolist():
+            parts = PurePosixPath(info.filename).parts
+            if tuple(parts[1:]) != source_parts or info.is_dir():
+                continue
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            with bundle.open(info) as source, destination.open("wb") as output:
+                shutil.copyfileobj(source, output)
+            return
+    raise SystemExit(f"Upstream file not found: '{source_path}'")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("skill")
@@ -117,8 +132,15 @@ def main() -> int:
         staged.mkdir()
         extract_subtree(archive, source["path"], staged)
         if not (staged / "LICENSE.txt").is_file():
-            raise SystemExit("Upstream skill has no LICENSE.txt; refusing to vendor")
-        shutil.rmtree(destination)
+            license_path = source.get("license_path")
+            if not license_path:
+                raise SystemExit(
+                    "Upstream skill has no LICENSE.txt and no reviewed "
+                    "source.license_path; refusing to vendor"
+                )
+            extract_file(archive, license_path, staged / "LICENSE.txt")
+        if destination.exists():
+            shutil.rmtree(destination)
         shutil.copytree(staged, destination)
 
     source["ref"] = ref

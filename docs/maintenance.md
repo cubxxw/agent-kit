@@ -15,6 +15,10 @@ When drift is reported:
 5. Run tests and the strict doctor.
 6. Commit the vendor diff and updated pin together.
 
+When the skill directory does not contain its own license file, the catalog
+must declare a reviewed repository-relative `source.license_path`. The updater
+copies that file to `LICENSE.txt` inside the distributed skill.
+
 ## Adding a skill
 
 Use this acceptance order:
@@ -37,7 +41,8 @@ the active catalog.
 ```sh
 git pull --ff-only
 ./bin/agent-kit doctor --strict
-./bin/agent-kit install --profile developer --tool all --replace-managed
+./bin/agent-kit install --profile full-stack --tool core --dry-run
+./bin/agent-kit install --profile full-stack --tool core --replace-managed
 ```
 
 Never use an update command that discards a dirty checkout.
@@ -62,3 +67,6 @@ Uninstall removes only links that resolve to the current checkout.
 - GitHub Actions use full commit pins.
 - Repository visibility is public.
 - GitHub secret scanning and push protection are enabled.
+- `python3 skills/ui-ux-pro-max/scripts/validate_data.py` passes when the
+  design profile is present.
+- `npx skills add . --list` discovers every catalog skill.

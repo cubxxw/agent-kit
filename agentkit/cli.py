@@ -5,6 +5,7 @@ import sys
 
 from .core import (
     AgentKitError,
+    SUPPORTED_TOOLS,
     install_links,
     installation_status,
     scan_public_tree,
@@ -16,13 +17,17 @@ from .core import (
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="agent-kit",
-        description="Manage one canonical Agent Skills library for Codex and Claude Code.",
+        description="Manage one canonical Agent Skills library across coding agents.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    install = subparsers.add_parser("install", help="Link a profile into both agents")
+    tool_choices = ("core", "all", *SUPPORTED_TOOLS)
+
+    install = subparsers.add_parser(
+        "install", help="Link a profile into one or more agents"
+    )
     install.add_argument("--profile", default="base")
-    install.add_argument("--tool", choices=("all", "codex", "claude"), default="all")
+    install.add_argument("--tool", choices=tool_choices, default="core")
     install.add_argument("--dry-run", action="store_true")
     install.add_argument(
         "--replace-managed",
@@ -34,14 +39,12 @@ def build_parser() -> argparse.ArgumentParser:
         "uninstall", help="Remove links owned by this checkout"
     )
     uninstall.add_argument("--profile", default="base")
-    uninstall.add_argument(
-        "--tool", choices=("all", "codex", "claude"), default="all"
-    )
+    uninstall.add_argument("--tool", choices=tool_choices, default="core")
     uninstall.add_argument("--dry-run", action="store_true")
 
     status = subparsers.add_parser("status", help="Show link state for a profile")
     status.add_argument("--profile", default="base")
-    status.add_argument("--tool", choices=("all", "codex", "claude"), default="all")
+    status.add_argument("--tool", choices=tool_choices, default="core")
 
     doctor = subparsers.add_parser(
         "doctor", help="Validate the catalog and public repository boundary"

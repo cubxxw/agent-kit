@@ -12,6 +12,8 @@ from typing import Iterable
 ROOT = Path(__file__).resolve().parent.parent
 CATALOG_PATH = ROOT / "catalog.json"
 SKILL_NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+CORE_TOOLS = ("codex", "claude")
+SUPPORTED_TOOLS = ("codex", "claude", "qwen", "opencode", "pi", "openclaw")
 
 SECRET_PATTERNS = (
     ("private key", re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")),
@@ -21,9 +23,17 @@ SECRET_PATTERNS = (
     ("AWS access key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
 )
 PRIVATE_PATH_PATTERNS = (
-    re.compile(r"/Users/[A-Za-z0-9._-]+/"),
-    re.compile(r"/home/[A-Za-z0-9._-]+/"),
+    re.compile(r"/Users/(?P<user>[A-Za-z0-9._-]+)/"),
+    re.compile(r"/home/(?P<user>[A-Za-z0-9._-]+)/"),
 )
+PUBLIC_HOME_PLACEHOLDERS = {
+    "example",
+    "me",
+    "name",
+    "user",
+    "username",
+    "yourname",
+}
 FORBIDDEN_FILENAMES = {
     ".env",
     ".env.local",
@@ -98,6 +108,25 @@ def tool_directories() -> dict[str, Path]:
                 "AGENT_KIT_CLAUDE_SKILLS_DIR", home / ".claude" / "skills"
             )
         ).expanduser(),
+        "qwen": Path(
+            os.environ.get("AGENT_KIT_QWEN_SKILLS_DIR", home / ".qwen" / "skills")
+        ).expanduser(),
+        "opencode": Path(
+            os.environ.get(
+                "AGENT_KIT_OPENCODE_SKILLS_DIR",
+                home / ".config" / "opencode" / "skills",
+            )
+        ).expanduser(),
+        "pi": Path(
+            os.environ.get(
+                "AGENT_KIT_PI_SKILLS_DIR", home / ".pi" / "agent" / "skills"
+            )
+        ).expanduser(),
+        "openclaw": Path(
+            os.environ.get(
+                "AGENT_KIT_OPENCLAW_SKILLS_DIR", home / ".openclaw" / "skills"
+            )
+        ).expanduser(),
     }
 
 
@@ -105,8 +134,11 @@ def selected_tools(tool: str) -> dict[str, Path]:
     directories = tool_directories()
     if tool == "all":
         return directories
+    if tool == "core":
+        return {name: directories[name] for name in CORE_TOOLS}
     if tool not in directories:
-        raise AgentKitError(f"Unsupported tool '{tool}'")
+        available = ", ".join(("core", "all", *SUPPORTED_TOOLS))
+        raise AgentKitError(f"Unsupported tool '{tool}'. Available: {available}")
     return {tool: directories[tool]}
 
 
@@ -133,7 +165,7 @@ def link_state(destination: Path, source: Path) -> str:
 
 def install_links(
     profile: str,
-    tool: str = "all",
+    tool: str = "core",
     *,
     dry_run: bool = False,
     replace_managed: bool = False,
@@ -175,7 +207,9 @@ def install_links(
     return messages
 
 
-def uninstall_links(profile: str, tool: str = "all", *, dry_run: bool = False) -> list[str]:
+def uninstall_links(
+    profile: str, tool: str = "core", *, dry_run: bool = False
+) -> list[str]:
     catalog = load_catalog()
     entries = skill_map(catalog)
     messages: list[str] = []
@@ -307,11 +341,12 @@ def tracked_files() -> list[Path]:
         capture_output=True,
     )
     if result.returncode == 0:
-        return [
+        candidates = [
             ROOT / os.fsdecode(item)
             for item in result.stdout.split(b"\0")
             if item
         ]
+        return [path for path in candidates if path.exists() or path.is_symlink()]
     return [path for path in ROOT.rglob("*") if path.is_file()]
 
 
@@ -347,14 +382,19 @@ def scan_public_tree(paths: Iterable[Path] | None = None) -> list[Finding]:
             if pattern.search(text):
                 findings.append(Finding("error", str(relative), f"possible {label}"))
         for pattern in PRIVATE_PATH_PATTERNS:
-            if pattern.search(text):
+            matches = [
+                match
+                for match in pattern.finditer(text)
+                if match.group("user").lower() not in PUBLIC_HOME_PLACEHOLDERS
+            ]
+            if matches:
                 findings.append(
                     Finding("error", str(relative), "contains an absolute home path")
                 )
     return findings
 
 
-def installation_status(profile: str, tool: str = "all") -> list[str]:
+def installation_status(profile: str, tool: str = "core") -> list[str]:
     catalog = load_catalog()
     entries = skill_map(catalog)
     rows: list[str] = []

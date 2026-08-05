@@ -1,19 +1,27 @@
 # Architecture
 
-## One source, two discovery views
+## One source, many discovery views
 
 ```text
 agent-kit/
 ├── catalog.json
-├── skills/                    first-party skills
-└── vendor/                    reviewed, pinned third-party skills
+└── skills/                    every accepted, discoverable skill
           │
-          ├── ~/.agents/skills/<name>   (Codex symlink)
-          └── ~/.claude/skills/<name>   (Claude Code symlink)
+          ├── ~/.claude/skills/<name>          Claude Code
+          ├── ~/.agents/skills/<name>          Codex
+          ├── ~/.qwen/skills/<name>            Qwen Code
+          ├── ~/.config/opencode/skills/<name> OpenCode
+          ├── ~/.pi/agent/skills/<name>        Pi
+          └── ~/.openclaw/skills/<name>        OpenClaw
 ```
 
 The repository is the canonical layer. Agent-specific directories are
-discovery adapters, not storage.
+discovery adapters, not storage. First-party and reviewed third-party skills
+share the discoverable `skills/` container; `catalog.json` records ownership,
+license, source path, commit pin, and tree pin.
+
+Keeping accepted skills under `skills/` also makes the same repository
+discoverable by CC Switch custom repositories and the open `skills` CLI.
 
 ## Portability boundary
 
@@ -25,9 +33,13 @@ discovery adapters, not storage.
 | MCP | Shared intent and environment-variable names, rendered per host |
 | Auth, models, approvals, state | Never synchronized |
 
-Codex and Claude Code have different configuration schemas. Pretending those
-schemas are identical would create a fragile abstraction. The shared layer
-stops at portable intent; thin adapters preserve host semantics.
+Agent hosts have different configuration schemas. Pretending those schemas
+are identical would create a fragile abstraction. The shared layer stops at
+portable intent; thin adapters preserve host semantics.
+
+CC Switch is an optional local runtime layer for provider, key, model, MCP,
+session, backup, and cross-application switching. Agent Kit never imports that
+private state into Git.
 
 ## Conflict model
 
@@ -71,3 +83,7 @@ false alerts.
 - an installation conflict.
 
 This makes repeated server provisioning safe and predictable.
+
+`AGENT_KIT_PROFILE` selects catalog scope. `AGENT_KIT_TOOL` selects `core`,
+`all`, or one native host. The default remains the minimal `base` profile on
+the `core` Claude Code + Codex targets.

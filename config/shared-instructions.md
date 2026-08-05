@@ -7,5 +7,10 @@
 - Prefer the smallest reusable mechanism that matches the task: instructions
   for durable rules, skills for repeatable workflows, hooks for deterministic
   enforcement, and MCP for live external data or actions.
-- Validate changes in proportion to risk and state what was actually checked.
+- Keep resident instructions compact. Link detailed references and load them
+  only when the task needs them.
+- When the same mistake repeats, encode the fix as a rule, test, hook, skill,
+  or script instead of relying on another chat reminder.
+- Define observable completion evidence, validate changes in proportion to
+  risk, and state what was actually checked.
 - Prefer `gh` for GitHub operations when it is available.

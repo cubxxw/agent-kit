@@ -3,6 +3,7 @@ set -eu
 
 agent_kit_dir="${AGENT_KIT_HOME:-$HOME/.agent-kit}"
 agent_kit_profile="${AGENT_KIT_PROFILE:-base}"
+agent_kit_tool="${AGENT_KIT_TOOL:-core}"
 agent_kit_repo="${AGENT_KIT_REPOSITORY:-https://github.com/cubxxw/agent-kit.git}"
 
 if ! command -v git >/dev/null 2>&1; then
@@ -30,5 +31,5 @@ else
 fi
 
 "$agent_kit_dir/bin/agent-kit" doctor --strict
-"$agent_kit_dir/bin/agent-kit" install --profile "$agent_kit_profile" --tool all
-"$agent_kit_dir/bin/agent-kit" status --profile "$agent_kit_profile" --tool all
+"$agent_kit_dir/bin/agent-kit" install --profile "$agent_kit_profile" --tool "$agent_kit_tool"
+"$agent_kit_dir/bin/agent-kit" status --profile "$agent_kit_profile" --tool "$agent_kit_tool"

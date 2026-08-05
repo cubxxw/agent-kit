@@ -9,18 +9,36 @@
       ]
     },
     "developer": {
-      "description": "Base profile plus trusted skills for building agent infrastructure.",
+      "description": "Base plus reviewed skills for agent infrastructure and source-grounded engineering.",
       "extends": [
         "base"
       ],
       "skills": [
-        "mcp-builder"
+        "mcp-builder",
+        "source-driven-development"
       ]
+    },
+    "design": {
+      "description": "Base plus reviewed UI and UX design intelligence.",
+      "extends": [
+        "base"
+      ],
+      "skills": [
+        "ui-ux-pro-max"
+      ]
+    },
+    "full-stack": {
+      "description": "The recommended personal workstation profile.",
+      "extends": [
+        "developer",
+        "design"
+      ],
+      "skills": []
     },
     "all": {
       "description": "Every skill currently accepted into the catalog.",
       "extends": [
-        "developer"
+        "full-stack"
       ],
       "skills": []
     }
@@ -36,7 +54,7 @@
     },
     {
       "name": "mcp-builder",
-      "path": "vendor/anthropic/mcp-builder",
+      "path": "skills/mcp-builder",
       "license": "Apache-2.0",
       "source": {
         "type": "vendored",
@@ -45,6 +63,34 @@
         "track": "main",
         "ref": "b29e7cf65e5cb78a5ac33d582270551bc74a14eb",
         "tree_sha": "b866bcfb57b780c10b587c7b543e871a91661ce0"
+      }
+    },
+    {
+      "name": "source-driven-development",
+      "path": "skills/source-driven-development",
+      "license": "MIT",
+      "source": {
+        "type": "vendored",
+        "repository": "addyosmani/agent-skills",
+        "path": "skills/source-driven-development",
+        "track": "main",
+        "ref": "bdf76c7c6b7b3b3e01bb15c9fdc42ac5351855c1",
+        "tree_sha": "f935ca8f7220760d619a02b55948ad534f4078b5",
+        "license_path": "LICENSE"
+      }
+    },
+    {
+      "name": "ui-ux-pro-max",
+      "path": "skills/ui-ux-pro-max",
+      "license": "MIT",
+      "source": {
+        "type": "vendored",
+        "repository": "nextlevelbuilder/ui-ux-pro-max-skill",
+        "path": ".claude/skills/ui-ux-pro-max",
+        "track": "main",
+        "ref": "4d140cf8ff6842de13213c7214eff3810371beb2",
+        "tree_sha": "3d66a0486c1000e6da51da67b0cb917be22ea8dd",
+        "license_path": "LICENSE"
       }
     }
   ]

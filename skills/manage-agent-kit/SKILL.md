@@ -1,17 +1,17 @@
 ---
 name: manage-agent-kit
-description: Audit, install, synchronize, and safely curate the user's shared Agent Skills repository for Codex and Claude Code. Use when setting up a new machine or server, checking skill drift, adding or updating a skill, resolving cross-agent installation conflicts, or reviewing whether agent configuration is safe to publish.
+description: Audit, initialize, upgrade, synchronize, and safely curate a shared Agent Skills repository across Claude Code, Codex, Qwen Code, OpenCode, Pi, OpenClaw, and compatible hosts. Use when setting up a machine or server, checking skill or upstream drift, adding or updating a skill, integrating CC Switch, resolving cross-agent installation conflicts, or reviewing whether agent configuration is safe to publish.
 ---
 
 # Manage Agent Kit
 
-Treat the checked-out `agent-kit` repository as the canonical source. Codex and
-Claude Code receive views of the same skill directories through symlinks.
+Treat the checked-out `agent-kit` repository as the canonical source. Agent
+hosts receive views of the same skill directories through symlinks.
 
 ## Start with evidence
 
 1. Run `scripts/agent-kit doctor --strict`.
-2. Run `scripts/agent-kit status --profile developer --tool all`.
+2. Run `scripts/agent-kit status --profile full-stack --tool core`.
 3. Inspect `catalog.json` before proposing changes.
 4. Read [references/operations.md](references/operations.md) for the relevant
    operation.
@@ -24,13 +24,15 @@ Report the exact conflict and preserve it.
 Use the smallest applicable profile:
 
 - `base`: only this management skill.
-- `developer`: `base` plus reviewed agent-development skills.
+- `developer`: source-grounded engineering and agent infrastructure.
+- `design`: reviewed UI/UX design intelligence.
+- `full-stack`: recommended personal workstation.
 - `all`: every accepted catalog entry.
 
 Preview first:
 
 ```sh
-scripts/agent-kit install --profile developer --tool all --dry-run
+scripts/agent-kit install --profile full-stack --tool core --dry-run
 ```
 
 Then install. Use `--replace-managed` only for stale symlinks that already
@@ -50,7 +52,8 @@ Accept a skill only when all gates pass:
 6. Add it to `catalog.json` and the narrowest profile.
 7. Run the creator validator when first-party skill instructions change.
 8. Run the repository tests, `doctor --strict`, and the public safety scan.
-9. Install it into both agents and verify both links resolve to the same target.
+9. Install it into the intended hosts and verify every link resolves to the
+   same target.
 
 Record rejected or deferred candidates in `docs/skill-selection.md`; this keeps
 the catalog small without losing the research.
@@ -82,6 +85,6 @@ Finish only when:
 
 - repository validation passes;
 - no public-boundary finding remains;
-- every selected skill is linked into both agent directories;
-- both links resolve to one canonical source;
+- every selected skill is linked into the intended agent directories;
+- all managed links resolve to one canonical source;
 - conflicts, deferred candidates, and upstream pins are explicit.
