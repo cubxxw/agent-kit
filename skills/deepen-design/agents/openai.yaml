@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deepen Design"
+  short_description: "Turn generic interfaces into ownable design systems"
+  default_prompt: "Use $deepen-design to branch, compare, and recursively refine this interface before changing micro-details."

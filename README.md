@@ -109,7 +109,7 @@ or another supported agent identifier.
 |---|---|---|
 | `base` | `manage-agent-kit` | Minimal server or first bootstrap |
 | `developer` | base + `mcp-builder` + `source-driven-development` | Backend, infra, MCP, and source-grounded engineering |
-| `design` | base + `ui-ux-pro-max` + `design-taste-frontend` | UI/UX intelligence, frontend taste, and review |
+| `design` | base + `deepen-design` + `ui-ux-pro-max` + `design-taste-frontend` | Recursive direction branching, UI/UX intelligence, and anti-slop preflight |
 | `full-stack` | developer + design | Recommended personal workstation |
 | `top` | every broadly useful, fully audited skill | Explicit curated-complete install |
 | `all` | compatibility alias for `top` | Existing automation |
@@ -117,6 +117,23 @@ or another supported agent identifier.
 [`catalog.json`](catalog.json) is the source of truth. Every third-party entry
 records its repository, upstream directory, full commit SHA, tree SHA, and
 license.
+
+The design stack has three deliberately separate jobs:
+
+1. `deepen-design` branches product truth, narrative, architecture, and
+   composition before implementation.
+2. `ui-ux-pro-max` supplies searchable UI/UX and stack-specific evidence.
+3. `design-taste-frontend` rejects common frontend clichés at final preflight.
+
+Taste rules alone can remove obvious slop while still converging on a polished
+template. Agent Kit therefore never treats a linter, Lighthouse score, or
+self-authored design score as proof of distinctiveness.
+
+Give a design Agent this sentence when the first result is merely polished:
+
+```text
+Use $deepen-design to audit the rendered interface, branch from product truth into two materially different directions, compare before/A/B evidence with the logo hidden, backtrack when both branches remain generic, and only after selecting an ownable architecture use $ui-ux-pro-max and $design-taste-frontend to implement and preflight it.
+```
 
 ## Top, without the bloat
 

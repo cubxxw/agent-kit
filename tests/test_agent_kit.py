@@ -72,6 +72,15 @@ class AgentKitTests(unittest.TestCase):
         self.assertEqual(names, resolve_profile(catalog, "top"))
         self.assertEqual(names, resolve_profile(catalog, "all"))
 
+    def test_design_direction_precedes_data_and_preflight(self) -> None:
+        catalog = load_catalog()
+        profile = resolve_profile(catalog, "design")
+        self.assertLess(profile.index("deepen-design"), profile.index("ui-ux-pro-max"))
+        self.assertLess(
+            profile.index("ui-ux-pro-max"),
+            profile.index("design-taste-frontend"),
+        )
+
     def test_installer_refuses_existing_directory(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

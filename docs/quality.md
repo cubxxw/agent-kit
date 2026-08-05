@@ -46,6 +46,22 @@ Release target: at least 95/100 with observable evidence.
 8. **Frontend knowledge lacked an execution-judgment layer.** Added the pinned,
    no-script `design-taste-frontend` beside the complementary UI/UX database
    and recorded an independent static scan.
+9. **A real design run passed every technical check and a self-authored 98/100
+   review while the user still found it mediocre.** Reclassified Taste Skill
+   as a final linter, separated functional evidence from taste judgment, and
+   added `deepen-design` to force product-derived binary directions, rendered
+   comparison, and backtracking before polish.
+
+Context-isolated forward evidence for finding 9:
+
+- a generic B2B task refused another leaf-level polish loop and retained two
+  competing direction/architecture paths;
+- the public Talent Signal regression independently identified the current
+  leaf-first failure, backtracked to the product invariant, produced
+  `The Redline` versus `The Decision Window`, and stopped before implementation
+  pending rendered A/B comparison;
+- neither test modified the target repository or saw this review’s intended
+  answer.
 
 ## Why three points remain open
 
@@ -56,4 +72,5 @@ Release target: at least 95/100 with observable evidence.
   cleanup still requires a deliberate review.
 
 The score is valid only while unit tests, the strict doctor, UI/UX data
-validation, ecosystem discovery, and CI all pass.
+validation, ecosystem discovery, first-party Skill forward tests, and CI all
+pass. It evaluates Agent Kit engineering, never the taste of a generated page.

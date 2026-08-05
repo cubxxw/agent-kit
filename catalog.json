@@ -19,11 +19,12 @@
       ]
     },
     "design": {
-      "description": "Base plus reviewed UI/UX intelligence and frontend taste.",
+      "description": "Base plus recursive design direction, UI/UX intelligence, and frontend preflight.",
       "extends": [
         "base"
       ],
       "skills": [
+        "deepen-design",
         "ui-ux-pro-max",
         "design-taste-frontend"
       ]
@@ -85,6 +86,14 @@
         "ref": "bdf76c7c6b7b3b3e01bb15c9fdc42ac5351855c1",
         "tree_sha": "f935ca8f7220760d619a02b55948ad534f4078b5",
         "license_path": "LICENSE"
+      }
+    },
+    {
+      "name": "deepen-design",
+      "path": "skills/deepen-design",
+      "license": "MIT",
+      "source": {
+        "type": "first-party"
       }
     },
     {
