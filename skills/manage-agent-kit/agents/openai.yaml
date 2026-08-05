@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manage Agent Kit"
+  short_description: "Sync shared skills across Codex and Claude"
+  default_prompt: "Use $manage-agent-kit to audit and synchronize my shared agent skills safely."

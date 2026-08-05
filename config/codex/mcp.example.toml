@@ -1,0 +1,3 @@
+[mcp_servers.example-service]
+url = "${EXAMPLE_MCP_URL}"
+bearer_token_env_var = "EXAMPLE_MCP_TOKEN"

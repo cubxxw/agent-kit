@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "repository": "cubxxw/agent-kit",
+  "profiles": {
+    "base": {
+      "description": "The management skill required on every machine.",
+      "skills": [
+        "manage-agent-kit"
+      ]
+    },
+    "developer": {
+      "description": "Base profile plus trusted skills for building agent infrastructure.",
+      "extends": [
+        "base"
+      ],
+      "skills": [
+        "mcp-builder"
+      ]
+    },
+    "all": {
+      "description": "Every skill currently accepted into the catalog.",
+      "extends": [
+        "developer"
+      ],
+      "skills": []
+    }
+  },
+  "skills": [
+    {
+      "name": "manage-agent-kit",
+      "path": "skills/manage-agent-kit",
+      "license": "MIT",
+      "source": {
+        "type": "first-party"
+      }
+    },
+    {
+      "name": "mcp-builder",
+      "path": "vendor/anthropic/mcp-builder",
+      "license": "Apache-2.0",
+      "source": {
+        "type": "vendored",
+        "repository": "anthropics/skills",
+        "path": "skills/mcp-builder",
+        "ref": "b29e7cf65e5cb78a5ac33d582270551bc74a14eb"
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "description": "Protect this public repository from obvious credential leaks.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/public_guard.py\"",
+            "timeout": 5,
+            "statusMessage": "Checking the public-repository boundary"
+          }
+        ]
+      }
+    ]
+  }
+}

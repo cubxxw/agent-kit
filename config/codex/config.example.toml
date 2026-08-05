@@ -1,0 +1,5 @@
+# Merge only the settings you need into the local Codex config.
+# Keep model, approval, sandbox, and authentication choices machine-local.
+
+[features]
+hooks = true

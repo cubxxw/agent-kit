@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+
+skill_script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+search_dir=$skill_script_dir
+
+while [ "$search_dir" != "/" ]; do
+  if [ -x "$search_dir/bin/agent-kit" ] && [ -f "$search_dir/catalog.json" ]; then
+    exec "$search_dir/bin/agent-kit" "$@"
+  fi
+  search_dir=$(dirname "$search_dir")
+done
+
+if [ -n "${AGENT_KIT_HOME:-}" ] && [ -x "$AGENT_KIT_HOME/bin/agent-kit" ]; then
+  exec "$AGENT_KIT_HOME/bin/agent-kit" "$@"
+fi
+
+echo "agent-kit checkout not found; set AGENT_KIT_HOME or clone cubxxw/agent-kit" >&2
+exit 1
