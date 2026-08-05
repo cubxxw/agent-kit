@@ -37,6 +37,18 @@ def latest_sha(repository: str, track: str) -> str:
     return data["sha"]
 
 
+def subtree_sha(repository: str, ref: str, source_path: str) -> str:
+    data = json.loads(
+        request(
+            f"https://api.github.com/repos/{repository}/git/trees/{ref}?recursive=1"
+        )
+    )
+    for item in data.get("tree", []):
+        if item.get("path") == source_path and item.get("type") == "tree":
+            return item["sha"]
+    raise SystemExit(f"Upstream tree not found: {repository}:{source_path}@{ref}")
+
+
 def ensure_clean(destination: Path) -> None:
     result = subprocess.run(
         ["git", "status", "--porcelain", "--", str(destination.relative_to(ROOT))],
@@ -110,6 +122,7 @@ def main() -> int:
         shutil.copytree(staged, destination)
 
     source["ref"] = ref
+    source["tree_sha"] = subtree_sha(source["repository"], ref, source["path"])
     CATALOG_PATH.write_text(
         json.dumps(catalog, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",

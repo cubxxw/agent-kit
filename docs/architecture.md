@@ -56,6 +56,10 @@ untracked publishable files for:
 This is defense in depth, not a substitute for GitHub secret scanning or human
 review.
 
+Upstream drift compares the pinned directory tree SHA, not the upstream
+repository head. Unrelated changes in a large skill repository do not create
+false alerts.
+
 ## Server bootstrap
 
 `scripts/bootstrap.sh` performs only fast-forward updates. It stops on:

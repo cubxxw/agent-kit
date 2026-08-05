@@ -29,6 +29,14 @@ def github_json(path: str) -> dict:
         return json.load(response)
 
 
+def subtree_sha(repository: str, ref: str, source_path: str) -> str:
+    tree = github_json(f"repos/{repository}/git/trees/{ref}?recursive=1")
+    for item in tree.get("tree", []):
+        if item.get("path") == source_path and item.get("type") == "tree":
+            return item["sha"]
+    raise KeyError(f"tree not found: {repository}:{source_path}@{ref}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fail-on-drift", action="store_true")
@@ -44,18 +52,25 @@ def main() -> int:
                 continue
             checked += 1
             track = source.get("track", "main")
-            latest = github_json(
-                f"repos/{source['repository']}/commits/{track}"
-            )["sha"]
-            current = source["ref"]
-            if latest != current:
+            latest_tree = subtree_sha(
+                source["repository"], track, source["path"]
+            )
+            current_tree = source["tree_sha"]
+            if latest_tree != current_tree:
                 drift = True
+                latest_commit = github_json(
+                    f"repos/{source['repository']}/commits/{track}"
+                )["sha"]
                 print(
-                    f"UPDATE {skill['name']}: {current[:12]} -> {latest[:12]} "
+                    f"UPDATE {skill['name']}: tree {current_tree[:12]} -> "
+                    f"{latest_tree[:12]} at {latest_commit[:12]} "
                     f"({source['repository']}:{source['path']})"
                 )
             else:
-                print(f"OK     {skill['name']}: {current[:12]}")
+                print(
+                    f"OK     {skill['name']}: tree {current_tree[:12]} "
+                    f"(pinned at {source['ref'][:12]})"
+                )
     except (KeyError, OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
         print(f"ERROR  upstream check failed: {exc}", file=sys.stderr)
         return 2

@@ -42,7 +42,9 @@
         "type": "vendored",
         "repository": "anthropics/skills",
         "path": "skills/mcp-builder",
-        "ref": "b29e7cf65e5cb78a5ac33d582270551bc74a14eb"
+        "track": "main",
+        "ref": "b29e7cf65e5cb78a5ac33d582270551bc74a14eb",
+        "tree_sha": "b866bcfb57b780c10b587c7b543e871a91661ce0"
       }
     }
   ]

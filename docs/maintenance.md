@@ -2,8 +2,9 @@
 
 ## Weekly
 
-The scheduled `upstream-drift` workflow compares every vendored pin with its
-tracked upstream branch. Drift is a review request, not permission to update.
+The scheduled `upstream-drift` workflow compares every vendored directory tree
+SHA with the same path on its tracked upstream branch. Unrelated upstream
+commits stay quiet. Real drift is a review request, not permission to update.
 
 When drift is reported:
 

@@ -269,6 +269,13 @@ def validate_catalog(catalog: dict | None = None) -> list[Finding]:
                 findings.append(
                     Finding("error", label, "vendored source ref must be a full SHA")
                 )
+            tree_sha = source.get("tree_sha", "")
+            if not re.fullmatch(r"[0-9a-f]{40}", tree_sha):
+                findings.append(
+                    Finding(
+                        "error", label, "vendored source tree_sha must be a full SHA"
+                    )
+                )
             if not (path / "LICENSE.txt").is_file():
                 findings.append(
                     Finding("error", label, "vendored skill must carry LICENSE.txt")
