@@ -36,6 +36,27 @@ Use this acceptance order:
 Rejected and deferred candidates belong in `docs/skill-selection.md`, not in
 the active catalog.
 
+## Maintaining the Top Skills Radar
+
+Review `docs/top-skills.md` monthly and when a user proposes a new source.
+Radar membership does not install anything. Move a named skill into
+`catalog.json` only after the complete acceptance order above passes.
+
+Use install counts, stars, and recent activity only for discovery. Prefer
+official/product-owned sources for product-specific work, then compare the
+selected skill against already installed triggers.
+
+For high-risk or executable candidates, an optional static scan can supplement
+manual review:
+
+```sh
+uvx --from git+https://github.com/NVIDIA/skillspector.git@0562b964ec5ceac67ee15c163738e5404f14a908 \
+  skillspector scan skills/<name> --no-llm
+```
+
+Triage every finding. A scanner score never replaces source, license,
+executable, dependency, permission, and overlap review.
+
 ## Updating this checkout
 
 ```sh
@@ -69,4 +90,7 @@ Uninstall removes only links that resolve to the current checkout.
 - GitHub secret scanning and push protection are enabled.
 - `python3 skills/ui-ux-pro-max/scripts/validate_data.py` passes when the
   design profile is present.
-- `npx skills add . --list` discovers every catalog skill.
+- `npm exec --yes --package=skills@1.5.21 -- skills add . --list` discovers
+  every catalog skill.
+- `docs/top-skills.md` still distinguishes adopted, on-demand, and
+  discovery-only sources.

@@ -1,6 +1,6 @@
 ---
 name: manage-agent-kit
-description: Audit, initialize, upgrade, synchronize, and safely curate a shared Agent Skills repository across Claude Code, Codex, Qwen Code, OpenCode, Pi, OpenClaw, and compatible hosts. Use when setting up a machine or server, checking skill or upstream drift, adding or updating a skill, integrating CC Switch, resolving cross-agent installation conflicts, or reviewing whether agent configuration is safe to publish.
+description: Audit, initialize, upgrade, synchronize, discover, and safely curate a shared Agent Skills repository across Claude Code, Codex, Qwen Code, OpenCode, Pi, OpenClaw, and compatible hosts. Use when setting up a machine or server, finding top GitHub skills, checking skill or upstream drift, adding or updating a skill, integrating CC Switch, resolving cross-agent installation conflicts, or reviewing whether agent configuration is safe to publish.
 ---
 
 # Manage Agent Kit
@@ -10,8 +10,8 @@ hosts receive views of the same skill directories through symlinks.
 
 ## Start with evidence
 
-1. Run `scripts/agent-kit doctor --strict`.
-2. Run `scripts/agent-kit status --profile full-stack --tool core`.
+1. Run `./bin/agent-kit doctor --strict`.
+2. Run `./bin/agent-kit status --profile full-stack --tool core`.
 3. Inspect `catalog.json` before proposing changes.
 4. Read [references/operations.md](references/operations.md) for the relevant
    operation.
@@ -25,20 +25,26 @@ Use the smallest applicable profile:
 
 - `base`: only this management skill.
 - `developer`: source-grounded engineering and agent infrastructure.
-- `design`: reviewed UI/UX design intelligence.
+- `design`: reviewed UI/UX intelligence and frontend taste.
 - `full-stack`: recommended personal workstation.
-- `all`: every accepted catalog entry.
+- `top`: every broadly useful skill that passed the full adoption gate.
+- `all`: compatibility alias for `top`.
 
 Preview first:
 
 ```sh
-scripts/agent-kit install --profile full-stack --tool core --dry-run
+./bin/agent-kit install --profile full-stack --tool core --dry-run
 ```
 
 Then install. Use `--replace-managed` only for stale symlinks that already
 point into this checkout. It must never replace copied files or foreign links.
 
 ## Curate a new skill
+
+Read the checkout’s
+[`docs/top-skills.md`](https://github.com/cubxxw/agent-kit/blob/main/docs/top-skills.md)
+before broad discovery. It separates adopted, on-demand, and discovery-only
+sources.
 
 Accept a skill only when all gates pass:
 
@@ -57,6 +63,21 @@ Accept a skill only when all gates pass:
 
 Record rejected or deferred candidates in `docs/skill-selection.md`; this keeps
 the catalog small without losing the research.
+
+## Discover top skills
+
+Treat rankings and awesome lists as candidate generators:
+
+1. Search official or product-owned repositories first.
+2. Use GitHub activity and `skills.sh` installs only as discovery signals.
+3. Identify the narrow skill directory that matches a repeated current need.
+4. Compare its triggers against the installed catalog.
+5. Return an adoption, on-demand, watch, or reject decision with evidence.
+6. Update `docs/top-skills.md` without installing anything unless the full
+   curation gate passes.
+
+Never bulk-install a pack because it is popular, official, or listed in the
+radar.
 
 ## Update a vendored skill
 
@@ -87,4 +108,4 @@ Finish only when:
 - no public-boundary finding remains;
 - every selected skill is linked into the intended agent directories;
 - all managed links resolve to one canonical source;
-- conflicts, deferred candidates, and upstream pins are explicit.
+- conflicts, deferred candidates, radar status, and upstream pins are explicit.

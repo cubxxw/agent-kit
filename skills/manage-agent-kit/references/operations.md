@@ -12,7 +12,7 @@ cd "$HOME/.agent-kit"
 ```
 
 The non-interactive equivalent is `scripts/bootstrap.sh`. Set
-Set `AGENT_KIT_PROFILE` and `AGENT_KIT_TOOL` when the machine needs a
+`AGENT_KIT_PROFILE` and `AGENT_KIT_TOOL` when the machine needs a
 non-default profile or host set.
 
 ## Existing machine
@@ -44,8 +44,9 @@ The repository remains canonical regardless of the discovery directory.
 For other hosts, browse and install through the open skills CLI:
 
 ```sh
-npx skills add cubxxw/agent-kit --list
-npx skills add cubxxw/agent-kit --global --agent <agent-id> --skill '*' --yes
+npm exec --yes --package=skills@1.5.21 -- skills add cubxxw/agent-kit --list
+npm exec --yes --package=skills@1.5.21 -- \
+  skills add cubxxw/agent-kit --global --agent <agent-id> --skill '*' --yes
 ```
 
 Do not install Node.js or a package manager without user authorization.

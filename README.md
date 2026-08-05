@@ -18,6 +18,7 @@ putting secrets in Git.
 [Give this to your agent](#give-this-to-your-agent) ·
 [Install](#install) ·
 [Profiles](#profiles) ·
+[Top Skills](#top-without-the-bloat) ·
 [CC Switch](#agent-kit--cc-switch) ·
 [Engineering guide](docs/best-practices.md)
 
@@ -46,8 +47,8 @@ something important. Agent Kit gives those concerns explicit boundaries:
   files through symlinks.
 - **Safe repetition.** Install and upgrade are idempotent, dry-runnable, and
   refuse copied directories or foreign links.
-- **Small, curated profiles.** Popularity helps discovery; license, current
-  value, non-overlap, and executable review decide acceptance.
+- **Curated defaults, broad radar.** Popularity helps discovery; license,
+  current value, non-overlap, and executable review decide installation.
 - **Public/private separation.** Skills, safe instructions, hooks, source pins,
   and templates can be public. Keys, auth, models, sessions, and machine state
   stay local.
@@ -92,10 +93,11 @@ agent integrations and discovers every accepted Agent Kit skill under
 
 ```sh
 # Browse before installing
-npx skills add cubxxw/agent-kit --list
+npm exec --yes --package=skills@1.5.21 -- skills add cubxxw/agent-kit --list
 
 # Example: install every accepted skill for one host
-npx skills add cubxxw/agent-kit --global --agent qwen-code --skill '*' --yes
+npm exec --yes --package=skills@1.5.21 -- \
+  skills add cubxxw/agent-kit --global --agent qwen-code --skill '*' --yes
 ```
 
 Replace `qwen-code` with `claude-code`, `codex`, `opencode`, `pi`, `openclaw`,
@@ -107,13 +109,31 @@ or another supported agent identifier.
 |---|---|---|
 | `base` | `manage-agent-kit` | Minimal server or first bootstrap |
 | `developer` | base + `mcp-builder` + `source-driven-development` | Backend, infra, MCP, and source-grounded engineering |
-| `design` | base + `ui-ux-pro-max` | UI/UX design and review |
+| `design` | base + `ui-ux-pro-max` + `design-taste-frontend` | UI/UX intelligence, frontend taste, and review |
 | `full-stack` | developer + design | Recommended personal workstation |
-| `all` | every accepted catalog entry | Explicit complete install |
+| `top` | every broadly useful, fully audited skill | Explicit curated-complete install |
+| `all` | compatibility alias for `top` | Existing automation |
 
 [`catalog.json`](catalog.json) is the source of truth. Every third-party entry
 records its repository, upstream directory, full commit SHA, tree SHA, and
 license.
+
+## Top, without the bloat
+
+[`docs/top-skills.md`](docs/top-skills.md) organizes high-signal GitHub skill
+sources into adopted, on-demand, and discovery-only layers. It covers official
+OpenAI, Anthropic, Vercel, Microsoft, Hugging Face, NVIDIA, .NET, Supabase,
+Firebase, Prisma, and Remotion sources plus strong specialist and community
+collections.
+
+The radar can be broad because it installs nothing. The `top` profile remains
+small because every included skill must pass license, source-pin, executable,
+overlap, public-boundary, and host-discovery gates.
+
+```sh
+./bin/agent-kit install --profile top --tool core --dry-run
+./bin/agent-kit install --profile top --tool core
+```
 
 ## How one source reaches every agent
 
@@ -188,7 +208,9 @@ The dated research and trade-offs are documented in
 the evolving [How Boris Uses Claude Code](https://howborisusesclaudecode.com/),
 [CC Switch](https://github.com/farion1231/cc-switch),
 [UI UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill), and
-[Addy Osmani’s Agent Skills](https://github.com/addyosmani/agent-skills).
+[Addy Osmani’s Agent Skills](https://github.com/addyosmani/agent-skills), with
+[Taste Skill](https://github.com/Leonxlnx/taste-skill) as the reviewed
+frontend judgment layer.
 
 ## Operate it
 
@@ -219,6 +241,7 @@ clean checkout.
 - [Bootstrap protocol](docs/bootstrap.md)
 - [Maintenance runbook](docs/maintenance.md)
 - [Skill selection ledger](docs/skill-selection.md)
+- [Top Skills Radar](docs/top-skills.md)
 - [Boris-style quality review](docs/quality.md)
 - [Security policy](SECURITY.md)
 - [Third-party notices](THIRD_PARTY_NOTICES.md)

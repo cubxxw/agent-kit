@@ -41,6 +41,34 @@ small.
 - Verification: upstream data validator and representative search commands are
   part of the release gate.
 
+### Leonxlnx `design-taste-frontend`
+
+- Source: `Leonxlnx/taste-skill`, `skills/taste-skill`
+- Decision: vendored and installed in the `design`, `full-stack`, and `top`
+  profiles.
+- Why: adds brief inference, anti-template frontend judgment, redesign audit,
+  accessibility/motion guardrails, and a mechanical preflight. It complements
+  the searchable UI/UX data in `ui-ux-pro-max`.
+- Scope: landing pages, portfolios, and redesigns only; the upstream skill
+  explicitly excludes dashboards, data tables, and multi-step product UI.
+- Trust: MIT license, full commit and subtree pins, no executable files, and
+  vendored content byte-matches upstream.
+- Independent scan: NVIDIA SkillSpector 2.5.3 static mode returned `SAFE`,
+  risk score 18, with 100% file coverage. Three unpinned `npx` references were
+  accepted as documented supply-chain cautions; package installation still
+  requires user/repository authority and reviewed versions. Two other findings
+  were contextual false positives (`Do not ask the user to edit this file` and
+  MIT license wording).
+- Stability: upstream calls v2 experimental, so Agent Kit pins it and never
+  auto-updates it.
+
+## Top Skills Radar
+
+[`top-skills.md`](top-skills.md) keeps broad discovery separate from the
+installed catalog. Official product sources, specialist community packs,
+directories, and security tooling can all be indexed without expanding global
+triggering or supply-chain surface.
+
 ## Companion integration
 
 ### `farion1231/cc-switch`
@@ -95,6 +123,18 @@ small.
 - Reason: Codex already supplies system and plugin skills with their matching
   tools. Vendoring them would lose host-managed updates and several depend on
   Codex-specific connectors that Claude Code does not share.
+
+### Large GitHub and `skills.sh` collections
+
+- Decision: discovery only unless a named subtree passes the full gate.
+- Sources reviewed include official OpenAI, Anthropic, Vercel, Microsoft,
+  Hugging Face, NVIDIA, .NET, Supabase, Firebase, Prisma, and Remotion packs;
+  Matt Pocock, Superpowers, Trail of Bits, Baoyu, Marketing Skills, scientific
+  and diagram collections; and the skills.sh, GitHub Awesome Copilot,
+  VoltAgent, and Composio directories.
+- Reason: repository reputation and install counts cannot transfer trust to
+  every nested skill. Broad packs also multiply trigger overlap and update
+  cost.
 
 ### Brain creation skills
 

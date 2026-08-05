@@ -22,6 +22,17 @@ The complete upstream license is retained at
 - Changes: skill content preserved; the repository-root MIT license is copied
   to `LICENSE.txt` inside the distributed skill.
 
+## Leonxlnx Design Taste Frontend
+
+- Source:
+  <https://github.com/Leonxlnx/taste-skill/tree/main/skills/taste-skill>
+- Pinned commit: `e988add20dab0fa97d7a76781c48961c8184288e`
+- Local path: `skills/design-taste-frontend`
+- License: MIT
+- Changes: skill content preserved byte-for-byte; the upstream directory is
+  renamed to match its `name` frontmatter, and the repository-root MIT license
+  is copied to `LICENSE.txt`.
+
 ## Next Level Builder UI UX Pro Max
 
 - Source:
