@@ -35,18 +35,28 @@ small.
 
 - Streamlit `developing-with-streamlit`: runtime-loaded from the installed
   distribution. Reviewed at `d8dbd3c436d02a78ed6deb49adc323262e74c807`
-  (Apache-2.0); Streamlit 1.63.0 contains the canonical skill. Agent Kit does
-  not run `streamlit skills`, because that mutates global discovery links.
+  with skill tree `069dc3dee88fd9cf789847b3aa6270273b2f9c72`
+  (Apache-2.0). The released Streamlit 1.63.0 path was verified at commit
+  `cb9aba9ff4d89c496ed15fd1aa7ee1fef19e0c24`, bundled skill tree
+  `367cf01b53feb6c6786fbc6d2e4a99d8239efa56`. The former
+  `streamlit/agent-skills` repository is archived; the canonical source now
+  ships with Streamlit. Agent Kit does not run `streamlit skills`, because that
+  mutates global discovery links.
 - `helderberto/agent-skills` `prototype`: reference-only at
-  `deceebdd5d9706edc8d75d088a13f3a1f0c4fac5` (MIT). Kept its one-question,
-  one-command, expose-state, and discard-or-absorb principles; rejected its
-  blanket prohibition on tests because case/eval accumulation is the purpose.
+  `deceebdd5d9706edc8d75d088a13f3a1f0c4fac5`, subtree
+  `fd4d5161e6cda547a43af2807cacf75339d9db27` (MIT). Kept its
+  one-question, one-command, expose-state, and discard-or-absorb principles;
+  rejected its blanket prohibition on tests because case/eval accumulation is
+  the purpose.
 - `obra/superpowers` `brainstorming`: not installed, reviewed at
-  `b36e0829c6d0140e93cfef2ca599b1b07d4a7797` (MIT). Its broad mandatory
-  triggers, hard approval/plan-writing loop, and companion process surfaces
-  conflict with a timeboxed evidence probe.
+  `b36e0829c6d0140e93cfef2ca599b1b07d4a7797`, subtree
+  `881fc4ac82a25e61a58d332426b5673efe060da0` (MIT). Its broad
+  mandatory triggers, hard approval/plan-writing loop, and companion process
+  surfaces conflict with a timeboxed evidence probe.
 - Anthropic `frontend-design` and `webapp-testing`: reference-only, reviewed at
-  `41bbe19d1a1a7eaab5e7bb9050a417e5c6cffc8f` (per-skill Apache-2.0). Use the
+  `41bbe19d1a1a7eaab5e7bb9050a417e5c6cffc8f`, trees
+  `d79e2a5bb4df4a386c2adcdd9ab8709bba28c3f6` and
+  `5ffb7dc66b9fd4c25c3e400a4c00da99a349b714` (per-skill Apache-2.0). Use the
   former only for a taste-mode visual question and the latter only when DOM,
   CSS, JavaScript, screenshots, resize, or browser timing is evidence. The
   browser helper's shell and portability choices keep it out of the default
