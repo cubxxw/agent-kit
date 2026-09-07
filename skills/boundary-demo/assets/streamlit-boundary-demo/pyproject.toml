@@ -1,0 +1,17 @@
+[project]
+name = "{{PACKAGE_NAME}}"
+version = "0.1.0"
+description = "Disposable system-boundary experiment"
+requires-python = ">=3.10"
+dependencies = [
+  "streamlit>=1.60,<2",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8,<9",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

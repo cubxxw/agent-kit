@@ -1,9 +1,56 @@
 # Skill selection ledger
 
-Evaluated on 2026-08-05. This ledger records why the active catalog stays
+Evaluated on 2026-09-07. This ledger records why the active catalog stays
 small.
 
 ## Adopted
+
+### First-party `boundary-demo`
+
+- Source: `cubxxw/agent-kit`, designed from repeated needs to test system
+  boundaries without prematurely building a product.
+- Decision: install in the narrow `prototyping` profile; make `full-stack` and
+  `top` extend it. Keeping a separate profile lets servers and production-only
+  hosts omit the workflow.
+- Role: turn exactly one uncertain boundary, logic, or taste decision into the
+  smallest observable probe, with normal, edge, and failure cases and a
+  `supported`, `rejected`, or `inconclusive` result.
+- Durable boundary: contracts, confirmed regression cases, and decision
+  evidence may survive; the UI shell and exploratory traces are disposable.
+  Automated verdicts never become human-confirmed or Gold cases by themselves.
+- Safety: the Streamlit starter binds to loopback, keeps adapter calls behind an
+  explicit submit, ships only deterministic fake adapters and synthetic cases,
+  and stores rerun/UI state separately from domain state.
+- Verification: the initializer is refusal-safe for nonempty targets; the
+  portable engine, pytest cases, Streamlit AppTest flow, runtime skill lookup,
+  project-local `runOnSave`, and loopback config are exercised in an isolated
+  Streamlit 1.63.0 environment.
+- Review: independent decision/architecture, case/eval, and curation reviewers
+  found no unresolved P0. Their P1 requests—runtime-pinned official guidance,
+  explicit case authority, one-call/zero-call assertions, failure traces,
+  public/private separation, and a narrow profile—are encoded in tests and
+  documentation.
+
+#### Upstream ideas used without vendoring
+
+- Streamlit `developing-with-streamlit`: runtime-loaded from the installed
+  distribution. Reviewed at `d8dbd3c436d02a78ed6deb49adc323262e74c807`
+  (Apache-2.0); Streamlit 1.63.0 contains the canonical skill. Agent Kit does
+  not run `streamlit skills`, because that mutates global discovery links.
+- `helderberto/agent-skills` `prototype`: reference-only at
+  `deceebdd5d9706edc8d75d088a13f3a1f0c4fac5` (MIT). Kept its one-question,
+  one-command, expose-state, and discard-or-absorb principles; rejected its
+  blanket prohibition on tests because case/eval accumulation is the purpose.
+- `obra/superpowers` `brainstorming`: not installed, reviewed at
+  `b36e0829c6d0140e93cfef2ca599b1b07d4a7797` (MIT). Its broad mandatory
+  triggers, hard approval/plan-writing loop, and companion process surfaces
+  conflict with a timeboxed evidence probe.
+- Anthropic `frontend-design` and `webapp-testing`: reference-only, reviewed at
+  `41bbe19d1a1a7eaab5e7bb9050a417e5c6cffc8f` (per-skill Apache-2.0). Use the
+  former only for a taste-mode visual question and the latter only when DOM,
+  CSS, JavaScript, screenshots, resize, or browser timing is evidence. The
+  browser helper's shell and portability choices keep it out of the default
+  starter.
 
 ### First-party `deepen-design`
 
@@ -131,9 +178,10 @@ triggering or supply-chain surface.
 
 - Decision: do not add to the shared catalog.
 - Value: mature end-to-end engineering workflows.
-- Reason: broad behavioral framework overlaps the existing gstack, Codex
-  workflows, and repository-specific instructions. Installing both would
-  increase triggering conflicts and context cost.
+- Reason: broad `MUST` triggers, approval-heavy brainstorming and plan-writing,
+  and companion visual/process-server surfaces overlap existing Codex and
+  repository workflows. Installing it beside a one-question, timeboxed demo
+  skill would increase trigger conflicts, context cost, and cleanup surface.
 
 ### Full `addyosmani/agent-skills` pack
 

@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "id": "normal-authorized",
+  "case_type": "normal",
+  "source": "synthetic",
+  "split": "discovery",
+  "purpose": "An authorized request may cross the boundary once.",
+  "given": {
+    "input": {
+      "request_id": "req-normal",
+      "payload": "synthetic example",
+      "authorized": true
+    },
+    "initial_state": {
+      "status": "idle",
+      "commits": []
+    },
+    "adapter": {
+      "scenario": "success"
+    }
+  },
+  "expect": {
+    "result_status": "completed",
+    "output_subset": {
+      "committed": true,
+      "retryable": false
+    },
+    "final_state_subset": {
+      "status": "completed"
+    },
+    "trace_required": [
+      "input.validated",
+      "policy.allowed",
+      "write.committed"
+    ],
+    "trace_forbidden": [],
+    "adapter_calls": 1
+  },
+  "review": {
+    "status": "unreviewed",
+    "rationale": null,
+    "surprise": null,
+    "next_case": null
+  }
+}

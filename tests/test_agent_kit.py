@@ -81,6 +81,15 @@ class AgentKitTests(unittest.TestCase):
             profile.index("design-taste-frontend"),
         )
 
+    def test_prototyping_profile_is_narrow_and_full_stack_includes_it(self) -> None:
+        catalog = load_catalog()
+        self.assertEqual(
+            ["manage-agent-kit", "boundary-demo"],
+            resolve_profile(catalog, "prototyping"),
+        )
+        full_stack = resolve_profile(catalog, "full-stack")
+        self.assertEqual("boundary-demo", full_stack[-1])
+
     def test_installer_refuses_existing_directory(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
