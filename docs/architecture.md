@@ -53,6 +53,33 @@ The first layer is first-party because no third-party rule set can infer the
 user’s ownable product argument by itself. Vendored skills remain byte-stable
 and independently updatable.
 
+## Boundary demo: decision before product
+
+`boundary-demo` is a first-party orchestration skill, not a second Streamlit
+manual and not a miniature Product Foundry:
+
+```text
+one uncertain decision
+  → boundary | logic | taste probe
+  → smallest suitable medium
+  → normal + edge + failure cases
+  → observed run + automated verdict + human choice
+  → supported | rejected | inconclusive
+  → accepted contract/cases may enter a production project
+```
+
+For Python, data, LLM, state, or human-review probes, the bundled initializer
+creates a local Streamlit shell with fake adapters, pytest, AppTest,
+`server.runOnSave = true`, and loopback binding. It locates Streamlit's own
+version-matched `developing-with-streamlit` skill at runtime instead of copying
+framework guidance into Agent Kit.
+
+The shell and exploratory captures are disposable. Confirmed contracts and
+regression cases are durable. Public Agent Kit assets remain synthetic; real
+inputs, private Brain facts, traces, screenshots, and judgments stay in their
+authorized project or evidence store. Product Foundry begins only after a
+decision is accepted and rewrites production code under production gates.
+
 ## Portability boundary
 
 | Layer | Strategy |

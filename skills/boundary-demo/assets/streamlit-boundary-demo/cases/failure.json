@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "id": "failure-timeout",
+  "case_type": "failure",
+  "source": "synthetic",
+  "split": "discovery",
+  "purpose": "A downstream timeout remains retryable and never claims a commit.",
+  "given": {
+    "input": {
+      "request_id": "req-timeout",
+      "payload": "synthetic example",
+      "authorized": true
+    },
+    "initial_state": {
+      "status": "idle",
+      "commits": []
+    },
+    "adapter": {
+      "scenario": "timeout"
+    }
+  },
+  "expect": {
+    "result_status": "handled_error",
+    "output_subset": {
+      "committed": false,
+      "retryable": true
+    },
+    "final_state_subset": {
+      "status": "retryable_error",
+      "commits": []
+    },
+    "trace_required": [
+      "input.validated",
+      "adapter.timeout"
+    ],
+    "trace_forbidden": [
+      "write.committed"
+    ],
+    "adapter_calls": 1
+  },
+  "review": {
+    "status": "unreviewed",
+    "rationale": null,
+    "surprise": null,
+    "next_case": null
+  }
+}

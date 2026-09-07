@@ -1,0 +1,4 @@
+interface:
+  display_name: "Boundary Demo"
+  short_description: "Turn uncertain boundaries into runnable evidence"
+  default_prompt: "Use $boundary-demo to turn one uncertain system boundary into a disposable case-driven demo."

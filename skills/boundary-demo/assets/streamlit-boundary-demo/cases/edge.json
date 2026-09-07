@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "id": "edge-unauthorized",
+  "case_type": "edge",
+  "source": "synthetic",
+  "split": "discovery",
+  "purpose": "A request without explicit authorization must not call the adapter.",
+  "given": {
+    "input": {
+      "request_id": "req-edge",
+      "payload": "synthetic example",
+      "authorized": false
+    },
+    "initial_state": {
+      "status": "idle",
+      "commits": []
+    },
+    "adapter": {
+      "scenario": "success"
+    }
+  },
+  "expect": {
+    "result_status": "policy_rejected",
+    "output_subset": {
+      "committed": false,
+      "retryable": false
+    },
+    "final_state_subset": {
+      "status": "policy_rejected",
+      "commits": []
+    },
+    "trace_required": [
+      "input.validated",
+      "policy.denied"
+    ],
+    "trace_forbidden": [
+      "adapter.called",
+      "write.committed"
+    ],
+    "adapter_calls": 0
+  },
+  "review": {
+    "status": "unreviewed",
+    "rationale": null,
+    "surprise": null,
+    "next_case": null
+  }
+}

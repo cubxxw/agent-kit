@@ -1,6 +1,6 @@
 # Top Skills Radar
 
-Reviewed on 2026-08-05. Repositories, licenses, install counts, and skill
+Reviewed on 2026-09-07. Repositories, licenses, install counts, and skill
 contents change; recheck the source before adoption.
 
 ## Top is a pipeline, not a dump
@@ -21,6 +21,7 @@ adoption gate. The radar can be broad because it installs nothing.
 | Skill | Source | Role |
 |---|---|---|
 | `manage-agent-kit` | `cubxxw/agent-kit` | Safe cross-agent initialization, upgrades, and curation |
+| `boundary-demo` | `cubxxw/agent-kit` | One-decision boundary probes with reusable case/eval evidence |
 | `deepen-design` | `cubxxw/agent-kit` | Recursive direction branching, pairwise visual critique, and backtracking before polish |
 | `mcp-builder` | [`anthropics/skills`](https://github.com/anthropics/skills) | MCP server design and evaluation |
 | `source-driven-development` | [`addyosmani/agent-skills`](https://github.com/addyosmani/agent-skills) | Implementation grounded in current official sources |
@@ -43,6 +44,7 @@ license, permission, or secret review.
 | Source | Best fit | Status |
 |---|---|---|
 | [`openai/skills`](https://github.com/openai/skills) | Codex-native document, browser, GitHub, and product workflows | Host-managed; do not vendor tool-coupled skills |
+| [`streamlit/streamlit`](https://github.com/streamlit/streamlit/tree/develop/lib/streamlit/.agents/skills/developing-with-streamlit) | Version-matched Streamlit layout, state, testing, performance, and template guidance | Load from the probe's installed Streamlit package; do not vendor or create global discovery links |
 | [`anthropics/skills`](https://github.com/anthropics/skills) | Claude-compatible documents, frontend, testing, and MCP workflows | Audit per-skill license; `mcp-builder` adopted |
 | [`vercel-labs/agent-skills`](https://github.com/vercel-labs/agent-skills) | React/Next.js performance, composition, interface and writing review | Strong on-demand source; avoid installing deployment skills globally |
 | [`MicrosoftDocs/Agent-Skills`](https://github.com/MicrosoftDocs/Agent-Skills) | Microsoft Learn and Azure guidance | On demand for Microsoft/Azure work |
@@ -65,6 +67,8 @@ have higher overlap and triggering risk than narrow specialist skills.
 |---|---|---|
 | [`mattpocock/skills`](https://github.com/mattpocock/skills) | Grilling, domain language, planning, diagnosis, handoff, and focused engineering workflows | Watch and adopt narrowly; do not install the entire methodology beside overlapping hosts |
 | [`obra/superpowers`](https://github.com/obra/superpowers) | Coherent end-to-end development methodology with verification and review loops | Use as its own framework, not mixed into Agent Kit defaults |
+| [`helderberto/agent-skills`](https://github.com/helderberto/agent-skills/tree/main/skills/prototype) | A prototype answers one question and can be discarded | Reference only; its blanket no-test rule conflicts with durable case/eval evidence |
+| [`frontend-design`](https://github.com/anthropics/skills/tree/main/skills/frontend-design) / [`webapp-testing`](https://github.com/anthropics/skills/tree/main/skills/webapp-testing) | Visual direction and browser verification | Invoke only when taste or real browser behavior is the variable; do not make either the default probe loop |
 | [`emilkowalski/skills`](https://github.com/emilkowalski/skills) | Design engineering and motion judgment | On-demand design candidate |
 | [`pbakaus/impeccable`](https://github.com/pbakaus/impeccable) | Interface design language and anti-slop review | Watch for overlap with the adopted design stack |
 | [`trailofbits/skills`](https://github.com/trailofbits/skills) | Security research and audit workflows | Excellent specialist source; review CC-BY-SA obligations |

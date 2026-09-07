@@ -110,7 +110,8 @@ or another supported agent identifier.
 | `base` | `manage-agent-kit` | Minimal server or first bootstrap |
 | `developer` | base + `mcp-builder` + `source-driven-development` | Backend, infra, MCP, and source-grounded engineering |
 | `design` | base + `deepen-design` + `ui-ux-pro-max` + `design-taste-frontend` | Recursive direction branching, UI/UX intelligence, and anti-slop preflight |
-| `full-stack` | developer + design | Recommended personal workstation |
+| `prototyping` | base + `boundary-demo` | Disposable boundary experiments and reusable case/eval evidence |
+| `full-stack` | developer + design + prototyping | Recommended personal workstation |
 | `top` | every broadly useful, fully audited skill | Explicit curated-complete install |
 | `all` | compatibility alias for `top` | Existing automation |
 
@@ -133,6 +134,19 @@ Give a design Agent this sentence when the first result is merely polished:
 
 ```text
 Use $deepen-design to audit the rendered interface, branch from product truth into two materially different directions, compare before/A/B evidence with the logo hidden, backtrack when both branches remain generic, and only after selecting an ownable architecture use $ui-ux-pro-max and $design-taste-frontend to implement and preflight it.
+```
+
+`boundary-demo` has a different job: turn one uncertain system boundary into a
+runnable probe whose cases can outlive its disposable UI. It chooses one of
+boundary, logic, or taste mode; seeds normal, edge, and failure cases; separates
+observed facts from automated verdicts and human choices; and stops at a
+decision. Streamlit is the default medium for Python/data/state probes, not a
+requirement. New Streamlit probes get project-local `server.runOnSave = true`,
+loopback binding, fake adapters, pytest, and AppTest; technical Streamlit
+guidance is loaded from the version installed in that probe.
+
+```text
+Use $boundary-demo to answer one uncertain integration or state decision with a disposable demo, visible trace, and normal/edge/failure cases. Stop at supported, rejected, or inconclusive; do not turn it into a production app.
 ```
 
 ## Top, without the bloat
