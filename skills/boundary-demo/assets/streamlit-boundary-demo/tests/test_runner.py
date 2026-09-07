@@ -39,3 +39,15 @@ def test_timeout_never_claims_a_commit() -> None:
     assert result.output["committed"] is False
     assert result.final_state["commits"] == []
     assert "write.committed" not in {event.name for event in result.trace}
+
+
+def test_serialized_adapter_calls_are_detached() -> None:
+    case = next(
+        case
+        for case in load_cases(ROOT / "cases")
+        if case["id"] == "normal-authorized"
+    )
+    result = run_case(case, FakeAdapter("success"))
+    serialized = result.to_dict()
+    serialized["adapter_calls"][0]["payload"] = "changed"
+    assert result.adapter_calls[0]["payload"] == "synthetic example"

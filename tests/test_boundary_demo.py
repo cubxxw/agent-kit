@@ -23,9 +23,9 @@ class BoundaryDemoTests(unittest.TestCase):
                     str(INITIALIZER),
                     str(target),
                     "--name",
-                    "Boundary \"Check\"",
+                    "Boundary \"{{QUESTION_PY}}\" Check",
                     "--question",
-                    "Should an unauthorized request\ncross the boundary?",
+                    "Should {{DEMO_NAME}} remain literal\nand block the boundary?",
                 ],
                 text=True,
                 capture_output=True,
@@ -39,9 +39,12 @@ class BoundaryDemoTests(unittest.TestCase):
             self.assertIn('address = "127.0.0.1"', config)
             experiment = (target / "experiment.md").read_text(encoding="utf-8")
             self.assertIn(
-                "Should an unauthorized request\ncross the boundary?", experiment
+                "Should {{DEMO_NAME}} remain literal\nand block the boundary?",
+                experiment,
             )
-            self.assertNotIn("{{QUESTION}}", experiment)
+            app_source = (target / "streamlit_app.py").read_text(encoding="utf-8")
+            self.assertIn('Boundary \\"{{QUESTION_PY}}\\" Check', app_source)
+            self.assertIn("Should {{DEMO_NAME}} remain literal", app_source)
             subprocess.run(
                 [sys.executable, "-m", "compileall", "-q", str(target)],
                 text=True,

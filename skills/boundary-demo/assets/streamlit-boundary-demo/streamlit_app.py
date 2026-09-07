@@ -39,6 +39,7 @@ if st.session_state.get("loaded_case_id") != selected_id:
     st.session_state.authorized = selected["given"]["input"]["authorized"]
     st.session_state.scenario = selected["given"]["adapter"]["scenario"]
     st.session_state.pop("last_receipt", None)
+    st.session_state.pop("human_notes", None)
 
 st.write(selected["purpose"])
 with st.form("case_form"):
@@ -56,6 +57,7 @@ with st.form("case_form"):
 
 if st.button("Reset result", icon=":material/refresh:", key="reset_case"):
     st.session_state.pop("last_receipt", None)
+    st.session_state.pop("human_notes", None)
 
 if submitted:
     working_case = deepcopy(selected)
@@ -106,11 +108,13 @@ if receipt:
             "automated_verdict": receipt["automated_verdict"],
         }
     )
-    st.text_area(
+    human_notes = st.text_area(
         "Human decision notes",
-        placeholder="What changed or confirmed your decision? Not saved automatically.",
+        placeholder="What changed or confirmed your decision?",
+        help="Included in the downloaded receipt; the status remains unreviewed.",
         key="human_notes",
     )
+    receipt["human_choice"]["rationale"] = human_notes.strip() or None
     st.download_button(
         "Download evidence receipt",
         data=json.dumps(receipt, ensure_ascii=False, indent=2),

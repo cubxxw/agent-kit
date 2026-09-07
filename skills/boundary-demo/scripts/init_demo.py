@@ -5,6 +5,7 @@ import argparse
 import json
 import re
 import shutil
+import tempfile
 from pathlib import Path
 
 
@@ -23,21 +24,11 @@ def initialize(target: Path, *, name: str, question: str) -> None:
         raise ValueError("Demo name must not be blank")
     if not question.strip():
         raise ValueError("Decision question must not be blank")
-    target = target.expanduser().resolve(strict=False)
+    target = target.expanduser().absolute()
     if target == Path(target.anchor) or target == Path.home():
         raise ValueError("Refusing to scaffold into a filesystem root or home directory")
-    if target.exists() and not target.is_dir():
-        raise ValueError(f"Target exists and is not a directory: {target}")
-    if target.exists() and any(target.iterdir()):
-        raise ValueError(f"Target directory is not empty: {target}")
-
-    target.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(
-        TEMPLATE,
-        target,
-        dirs_exist_ok=True,
-        ignore=shutil.ignore_patterns("__pycache__", "*.py[cod]", ".DS_Store"),
-    )
+    if target.exists() or target.is_symlink():
+        raise ValueError(f"Target already exists: {target}")
 
     replacements = {
         "{{DEMO_NAME}}": name,
@@ -46,13 +37,29 @@ def initialize(target: Path, *, name: str, question: str) -> None:
         "{{QUESTION}}": question,
         "{{QUESTION_PY}}": json.dumps(question, ensure_ascii=False),
     }
-    for candidate in target.rglob("*"):
-        if not candidate.is_file() or candidate.suffix not in TEXT_SUFFIXES:
-            continue
-        content = candidate.read_text(encoding="utf-8")
-        for old, new in replacements.items():
-            content = content.replace(old, new)
-        candidate.write_text(content, encoding="utf-8")
+    token_pattern = re.compile("|".join(re.escape(token) for token in replacements))
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(
+        prefix=f".{target.name}-staging-", dir=target.parent
+    ) as staging_parent:
+        staging = Path(staging_parent) / "scaffold"
+        shutil.copytree(
+            TEMPLATE,
+            staging,
+            ignore=shutil.ignore_patterns("__pycache__", "*.py[cod]", ".DS_Store"),
+        )
+        for candidate in staging.rglob("*"):
+            if not candidate.is_file() or candidate.suffix not in TEXT_SUFFIXES:
+                continue
+            content = candidate.read_text(encoding="utf-8")
+            content = token_pattern.sub(
+                lambda match: replacements[match.group(0)], content
+            )
+            candidate.write_text(content, encoding="utf-8")
+
+        if target.exists() or target.is_symlink():
+            raise ValueError(f"Target appeared during initialization: {target}")
+        staging.rename(target)
 
 
 def main() -> int:

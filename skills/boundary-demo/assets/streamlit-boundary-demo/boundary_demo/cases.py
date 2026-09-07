@@ -51,8 +51,11 @@ def validate_case(case: dict[str, Any]) -> None:
         raise ValueError(f"Unsupported source: {case['source']}")
     if case["split"] not in {"discovery", "regression", "holdout"}:
         raise ValueError(f"Unsupported split: {case['split']}")
-    if case["review"].get("status") not in {"unreviewed", "confirmed", "rejected"}:
+    review_status = case["review"].get("status")
+    if review_status not in {"unreviewed", "confirmed", "rejected"}:
         raise ValueError("Unsupported review.status")
+    if case["split"] == "regression" and review_status != "confirmed":
+        raise ValueError("regression cases require confirmed review.status")
     if not isinstance(case["given"].get("input"), dict):
         raise ValueError("given.input must be a mapping")
     if not isinstance(case["given"].get("initial_state"), dict):

@@ -29,7 +29,7 @@ class RunResult:
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
         payload["trace"] = [event.to_dict() for event in self.trace]
-        payload["adapter_calls"] = list(self.adapter_calls)
+        payload["adapter_calls"] = list(payload["adapter_calls"])
         return payload
 
 

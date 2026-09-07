@@ -1,6 +1,8 @@
 from pathlib import Path
 
-from boundary_demo.cases import load_cases
+import pytest
+
+from boundary_demo.cases import load_cases, validate_case
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,3 +20,12 @@ def test_local_streamlit_config_enables_rerun_and_loopback() -> None:
     config = (ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8")
     assert "runOnSave = true" in config
     assert 'address = "127.0.0.1"' in config
+
+
+def test_regression_cases_require_human_confirmation() -> None:
+    case = load_cases(ROOT / "cases")[0]
+    case["split"] = "regression"
+    with pytest.raises(ValueError, match="require confirmed"):
+        validate_case(case)
+    case["review"]["status"] = "confirmed"
+    validate_case(case)

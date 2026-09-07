@@ -26,7 +26,10 @@
       "retryable": false
     },
     "final_state_subset": {
-      "status": "completed"
+      "status": "completed",
+      "commits": [
+        "fake-req-normal"
+      ]
     },
     "trace_required": [
       "input.validated",

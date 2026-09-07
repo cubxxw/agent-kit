@@ -36,6 +36,7 @@ Use existing design-direction skills only when available and relevant. They may
 generate or preflight variants, but they may not decide the user's taste. Use
 browser screenshots only when actual rendering is part of the comparison.
 
-Stop visual work until the normal, edge, and failure cases of the underlying
-boundary run. The purpose is to train predictive judgment, not to decorate an
-unverified model.
+Run normal, edge, and failure cases for the selected taste task itself. Keep
+Taste as the single mode; do not require a separate Boundary-mode run. The
+purpose is to train predictive judgment, not to decorate an untested happy
+path.
