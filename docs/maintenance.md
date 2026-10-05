@@ -78,7 +78,8 @@ Keep the profile and host selection already in use. Verify the origin and
 intended branch, and require a clean checkout before a fast-forward update.
 
 ```sh
-git pull --ff-only
+git fetch origin main
+git merge --ff-only FETCH_HEAD
 ./bin/agent-kit doctor --strict
 ./bin/agent-kit plan --profile <profile> --tool <host> --json
 ./bin/agent-kit install --profile <profile> --tool <host>
