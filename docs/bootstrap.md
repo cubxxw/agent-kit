@@ -1,163 +1,140 @@
-# Universal bootstrap protocol
+# Configure Agent Kit for the current agent
 
-This is the stable handoff contract for a coding agent initializing or
-upgrading a machine from Agent Kit.
+This is the setup contract for an agent helping a user adopt Agent Kit.
+Choose the user's task and existing installation path before changing anything.
 
-## The one-sentence handoff
+## One-sentence handoff
 
 ```text
-Open https://github.com/cubxxw/agent-kit/blob/main/docs/bootstrap.md and follow it end to end to safely initialize or fast-forward upgrade this machine for the current agent; preserve existing configuration and secrets, preview every change, run the verification gates, and report conflicts instead of forcing them.
+Read https://github.com/cubxxw/agent-kit/blob/main/docs/bootstrap.md and configure Agent Kit for my current agent and task. Choose the smallest useful profile, preserve my existing setup, show the complete plan before applying it, and verify one usable skill. If another manager owns my skills, use its integration path and explain any action I need to take.
 ```
 
-## Completion contract
+## Choose what the user will get
 
-Finish only when:
+Identify the current host from runtime evidence. Inspect skill directories and
+link destinations; do not read credentials or session contents for detection.
+Use one host unless the user wants multiple hosts.
 
-- the current host and selected profile are explicit;
-- no credential, auth state, private memory, or machine-local value was copied
-  into the repository;
-- the canonical checkout is clean and current by fast-forward only;
-- the strict doctor passes;
-- the install was previewed before it was applied;
-- existing directories and foreign symlinks were preserved;
-- installed links and host discovery were verified;
-- the final report lists changes, unchanged state, conflicts, checks, and any
-  remaining manual action.
+| User task | Profile | Result |
+|---|---|---|
+| General development, source verification, MCP work | `developer` | Source-grounded development and MCP-building guidance |
+| Improve a generic landing page or portfolio | `design` | Direction comparison, UI/UX references, implementation preflight |
+| Test one uncertain integration or state decision | `prototyping` | A small probe with normal, edge, and failure cases |
+| Draft a first-person Threads post | `writing` | A draft to review; publishing still needs the exact draft confirmed |
+| Deliberately combine development, design, and experiments | `full-stack` | The three engineering profiles |
+| Maintain installation only | `base` | The management skill, without a task workflow |
 
-## Protocol
+For unspecified coding work, use `developer`. Do not default to `top` or all
+hosts. State the proposed result and profile in one short sentence. Ask only
+when the missing task would materially change the choice; preserve choices
+already made in the conversation. Project handoff is also available as a
+[standalone template](../examples/project-handoff/README.md) without installing
+a new skill.
 
-### 1. Identify the host and boundary
+## Choose who owns installation
 
-Identify the current agent from the runtime, executable, or existing config.
-Map it to one native target:
+If CC Switch already distributes the relevant skills, follow
+[its integration path](integrations/cc-switch.md). Keep that manager in charge
+of updates and removal. Do not run the native installer over its links.
 
-| Host | Target |
-|---|---|
-| Claude Code | `claude` |
-| Codex | `codex` |
-| Qwen Code | `qwen` |
-| OpenCode | `opencode` |
-| Pi | `pi` |
-| OpenClaw | `openclaw` |
+For a user-managed checkout or server, follow the native path below. An
+unrecognized copied directory or foreign link is a conflict to report, not
+permission to move or replace it. The open skills CLI is another optional
+distribution path; it is not an extra installation step for native users.
 
-Do not inspect or copy secret-bearing files to “discover” configuration.
-Existing skill directories, settings files, and instruction files are
-read-only evidence until the preview has been reviewed.
+## Native path
 
-Default to:
+### Establish the source
 
-- `base` on a minimal server;
-- `developer` for backend, infrastructure, and MCP work;
-- `design` for a design-focused environment;
-- `full-stack` for a personal development workstation.
+Use a user-specified checkout, or `${AGENT_KIT_HOME:-$HOME/.agent-kit}`.
+Require Git and Python 3; report a missing dependency without installing it
+unless the user's setup request already authorizes that installation.
 
-### 2. Establish the canonical checkout
+- If absent, clone `https://github.com/cubxxw/agent-kit.git` on `main`.
+- If present, verify repository identity, origin, and branch. HTTPS and
+  GitHub SSH forms of that same repository are equivalent.
+- Require a clean checkout on `main` before fetching and fast-forwarding it.
+  Stop on a dirty, detached, divergent, or unexpected checkout. Preserve it.
+- Never reset, clean, force-pull, or overwrite local work.
 
-Use `${AGENT_KIT_HOME:-$HOME/.agent-kit}`.
+Record the checkout commit. Source versions in `catalog.json` identify the
+reviewed third-party content; fetching Agent Kit does not adopt newer upstream
+skills transitively.
 
-- If the path does not exist, clone
-  `https://github.com/cubxxw/agent-kit.git`.
-- If it is this repository and clean, run `git pull --ff-only`.
-- If it is dirty, not a Git repository, on a divergent branch, or has a
-  surprising remote, stop and report the exact state.
-- Never reset, clean, force-pull, or discard local changes.
+### Read the whole installation plan
 
-### 3. Audit before mutation
-
-From the checkout:
+From the checkout, run:
 
 ```sh
 ./bin/agent-kit doctor --strict
-./bin/agent-kit status --profile <profile> --tool <target>
-./bin/agent-kit install --profile <profile> --tool <target> --dry-run
+./bin/agent-kit plan --profile <profile> --tool <host> --json
 ```
 
-Read every conflict. A real directory or foreign symlink may belong to the
-user or another manager. Do not replace it.
+Native host names are `claude`, `codex`, `qwen`, `opencode`, `pi`, and
+`openclaw`. `core` selects Claude Code and Codex; `all` selects all six.
 
-### 4. Apply the smallest safe change
+The read-only plan contains `ready`, `actions`, and `conflicts`. Each action
+names the skill, tool, source, destination, state, proposed action, and reason.
+Exit code 0 means ready; 2 means a conflict or invalid request. Planning creates
+no destination directories or links. Valid profiles with conflicts still
+return the complete JSON; invalid input can instead return an error on stderr.
 
-If the preview is clean:
+Explain which skills will be added, which are already present, and every
+conflict. With `ready: false`, stop before installation and give a specific
+next action. If an existing manager owns the links, use its route. If a copied
+skill intentionally differs, keep it; migration requires the user's choice.
 
-```sh
-./bin/agent-kit install --profile <profile> --tool <target>
-```
+Use `--replace-managed` only for a stale link already owned by this checkout.
+Add the flag to both the plan and install commands. It cannot replace another
+manager's link or a real file/directory.
 
-Use `--replace-managed` only when the reported conflict is a stale symlink
-whose target is already inside this Agent Kit checkout. It is not a general
-force flag.
+### Apply and check
 
-For an agent that is not a native target, use the open skills CLI after
-browsing the catalog:
-
-```sh
-npm exec --yes --package=skills@1.5.21 -- skills add cubxxw/agent-kit --list
-npm exec --yes --package=skills@1.5.21 -- \
-  skills add cubxxw/agent-kit --global --agent <agent-id> --skill '*' --yes
-```
-
-Do not install Node.js, a package manager, or another system dependency
-without the user’s authorization.
-
-### 5. Keep host-specific runtime state local
-
-Never overwrite a host config with a file from `config/`. Merge only the
-portable intent the user approves.
-
-- Agent Kit owns public skills, safe instructions, hooks, source pins, and
-  templates.
-- CC Switch may own local providers, endpoints, keys, models, MCP state,
-  sessions, backups, and cross-app runtime switching.
-- Environment-variable names may be public; values stay local.
-
-### 6. Close the verification loop
-
-Run:
+When the plan is ready and the requested setup authorizes it:
 
 ```sh
+./bin/agent-kit install --profile <profile> --tool <host>
+./bin/agent-kit status --profile <profile> --tool <host>
 ./bin/agent-kit doctor --strict
-./bin/agent-kit status --profile <profile> --tool <target>
 python3 -m unittest discover -s tests -v
 ```
 
-When `ui-ux-pro-max` is selected, also run:
+For the design profile, also run the included UI/UX data validator. Verify the
+current host discovers one installed skill using [first-run.md](first-run.md),
+then complete its small test task. Keep the three results separate: files
+installed, host discovery, task outcome. A link check alone is not task success.
 
-```sh
-python3 skills/ui-ux-pro-max/scripts/validate_data.py
-```
+Setup manages skills. Files under `config/` are optional examples to discuss
+separately; they do not authorize replacing host configuration, installing MCP
+servers, choosing a provider, or changing models and credentials.
 
-Confirm that every managed destination is a symlink to this checkout and that
-the current host can discover the selected skills. A passing command without
-host discovery is incomplete verification.
-
-### 7. Report evidence
-
-Return this compact record:
+## Return a useful setup receipt
 
 ```text
-Host:
-Profile:
-Checkout:
-Installed/updated:
-Preserved unchanged:
-Conflicts:
-Verification:
-Manual next action:
+You can now:
+Host and installation owner:
+Profile and source commit:
+Added / already present:
+Conflicts and next action:
+File verification:
+Host discovery:
+First task result:
+How to update or remove:
 ```
 
-Do not claim completion with “looks good.” Include the exact checks and their
-outcomes.
+Name an unresolved discovery check honestly. Finish only when the selected
+installation path is verified, or return the precise blocker and next action.
+Do not equate repository tests with a successful task in every supported host.
 
-## Upgrade path
+## Updates and servers
 
-An upgrade is the same protocol with a current checkout:
+An update repeats source verification, a clean fast-forward, doctor, the full
+plan, and host/task checks. The native server helper is `scripts/bootstrap.sh`;
+set `AGENT_KIT_PROFILE` and `AGENT_KIT_TOOL` explicitly. It verifies origin and
+branch, prints the plan, and stops on conflicts before installing. Its default
+is the minimal `base` profile on `core`, not a complete workstation.
 
-1. require a clean worktree;
-2. `git pull --ff-only`;
-3. run the strict doctor;
-4. preview the selected profile and host;
-5. repair only Agent Kit-owned stale links;
-6. rerun repository, data, and host-discovery checks.
-
-Vendored upstream changes are not pulled transitively. Agent Kit updates them
-only after license, executable, diff, and full-SHA review.
+`AGENT_KIT_HOME`, `AGENT_KIT_REPOSITORY`, and `AGENT_KIT_BRANCH` can select an
+explicitly intended checkout and source. Keep existing CC Switch installations
+on their own update path. Review third-party upstream diffs manually before
+changing the catalog pins.

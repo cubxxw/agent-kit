@@ -39,7 +39,7 @@
       ]
     },
     "full-stack": {
-      "description": "The recommended personal workstation profile.",
+      "description": "An explicit combination of development, design, and prototyping workflows.",
       "extends": [
         "developer",
         "design",
@@ -47,10 +47,20 @@
       ],
       "skills": []
     },
-    "top": {
-      "description": "Every broadly useful skill that has passed the full adoption gate.",
+    "writing": {
+      "description": "Optional first-person Threads drafting and confirmed publishing.",
       "extends": [
-        "full-stack"
+        "base"
+      ],
+      "skills": [
+        "threads-oral-notes"
+      ]
+    },
+    "top": {
+      "description": "Every accepted skill, including optional writing; choose this explicitly.",
+      "extends": [
+        "full-stack",
+        "writing"
       ],
       "skills": []
     },

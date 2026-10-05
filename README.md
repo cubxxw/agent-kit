@@ -2,79 +2,119 @@
 
 <h1>agent-kit</h1>
 
-<p><strong>One public source of truth for every coding agent.</strong></p>
+<p><strong>Useful engineering workflows that travel between coding agents.</strong></p>
 
-<p>
-Bootstrap or upgrade a clean, reviewed Agent Skills setup on any laptop or
-server—without copying the same skills six times, overwriting local config, or
-putting secrets in Git.
-</p>
+<p>Compare design directions, test an uncertain boundary, or hand a project to
+another agent—with reviewed skills and a reproducible setup.</p>
 
 [![Verify](https://github.com/cubxxw/agent-kit/actions/workflows/verify.yml/badge.svg)](https://github.com/cubxxw/agent-kit/actions/workflows/verify.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-0f766e.svg)](LICENSE)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-111827.svg)](https://agentskills.io/specification)
-[![Public by design](https://img.shields.io/badge/public-safe%20by%20design-2563eb.svg)](SECURITY.md)
 
-[Give this to your agent](#give-this-to-your-agent) ·
-[Install](#install) ·
-[Profiles](#profiles) ·
-[Top Skills](#top-without-the-bloat) ·
-[CC Switch](#agent-kit--cc-switch) ·
-[Engineering guide](docs/best-practices.md)
+[Configure my current agent](#configure-your-current-agent) ·
+[Try one task](#try-one-task) ·
+[中文](README.zh-CN.md)
 
 </div>
 
-## Give this to your agent
+Agent Kit keeps reusable instructions and their supporting files in one
+versioned checkout. Choose the skills for the work in front of you; keep
+credentials, sessions, and private memory in the tools that already own them.
 
-> [!TIP]
-> Paste this single sentence into Claude Code, Codex, Qwen Code, OpenCode, Pi,
-> OpenClaw, or another shell-capable coding agent:
+## Configure your current agent
+
+Paste this into your shell-capable coding agent:
 
 ```text
-Open https://github.com/cubxxw/agent-kit/blob/main/docs/bootstrap.md and follow it end to end to safely initialize or fast-forward upgrade this machine for the current agent; preserve existing configuration and secrets, preview every change, run the verification gates, and report conflicts instead of forcing them.
+Read https://github.com/cubxxw/agent-kit/blob/main/docs/bootstrap.md and configure Agent Kit for my current agent and task. Choose the smallest useful profile, preserve my existing setup, show the complete plan before applying it, and verify one usable skill. If another manager owns my skills, use its integration path and explain any action I need to take.
 ```
 
-That is the whole handoff. The protocol tells the agent how to detect its host,
-pick a profile, protect existing state, install, verify, and report evidence.
+The agent detects its host, chooses a small profile, reads the complete change
+plan, and reports what it verified. Start with `developer` for general
+engineering, or choose a task-specific profile below.
 
-## Why agent-kit
+**Already using [CC Switch](https://github.com/farion1231/cc-switch)?** Add Agent
+Kit as a skill repository and let CC Switch distribute your selected skills.
+Use the [CC Switch guide](docs/integrations/cc-switch.md); you do not need to
+stack the native installer on the same skill directories.
 
-Agent setup usually drifts in three places: copied skills diverge, private
-runtime config leaks into dotfiles, and a bootstrap script silently replaces
-something important. Agent Kit gives those concerns explicit boundaries:
+## Try one task
 
-- **One canonical skill tree.** Every supported host sees the same reviewed
-  files through symlinks.
-- **Safe repetition.** Install and upgrade are idempotent, dry-runnable, and
-  refuse copied directories or foreign links.
-- **Curated defaults, broad radar.** Popularity helps discovery; license,
-  current value, non-overlap, and executable review decide installation.
-- **Public/private separation.** Skills, safe instructions, hooks, source pins,
-  and templates can be public. Keys, auth, models, sessions, and machine state
-  stay local.
-- **Verification before trust.** Catalog validation, tests, public-boundary
-  scanning, source pins, and host status are part of “done.”
+Pick the result you need. The [first-run guide](docs/first-run.md) walks through
+a complete local exercise in Claude Code or Codex.
 
-## Install
+| Your task | What you get | Start with |
+|---|---|---|
+| Find a design direction | Two visibly different directions, a comparison, and the product decisions behind them | `design` → `deepen-design` |
+| Test one uncertain boundary | A runnable probe, normal/edge/failure cases, and a decision tied to the evidence | `prototyping` → `boundary-demo` |
+| Move a project between agents | A handoff file with current state, decisions, checks, and the next action | [Project handoff template](examples/project-handoff/) |
 
-### Native installer
+For an existing homepage, try:
 
-Best for a machine you control. `core` means Claude Code + Codex; select one
-host by name when the agent should configure only itself.
+```text
+Use deepen-design to compare two materially different homepage directions for this project. Start from its audience and product truth, preserve the current implementation, and show before/A/B visual evidence. Stop before full implementation so I can choose a direction.
+```
+
+For a contained experiment, try:
+
+```text
+Use boundary-demo to compare retrying an order submission with and without an idempotency key. Use a deterministic fake adapter in a new local folder, with normal, repeated-request, and timeout-after-commit cases. Show state and trace, then stop at supported, rejected, or inconclusive. Keep it a disposable experiment.
+```
+
+For a project handoff, start with the template in
+[`examples/project-handoff/`](examples/project-handoff/). Give the next agent
+the project and that file. This is an explicit handoff; Agent Kit does not
+automatically synchronize agent memories or session history.
+
+## Install a small profile yourself
+
+Use this route if you want Agent Kit to manage native skill links. You need
+Git, Python 3, and an installed coding agent. This example targets Codex only;
+replace `codex` with `claude` for Claude Code.
 
 ```sh
 git clone https://github.com/cubxxw/agent-kit.git "$HOME/.agent-kit"
 cd "$HOME/.agent-kit"
 
 ./bin/agent-kit doctor --strict
-./bin/agent-kit install --profile full-stack --tool core --dry-run
-./bin/agent-kit install --profile full-stack --tool core
-./bin/agent-kit status --profile full-stack --tool core
+./bin/agent-kit plan --profile developer --tool codex --json
+./bin/agent-kit install --profile developer --tool codex --dry-run
+./bin/agent-kit install --profile developer --tool codex
+./bin/agent-kit status --profile developer --tool codex
 ```
 
-Supported native targets:
+Read the plan before installing. It returns `ready`, `actions`, and
+`conflicts`, including each source and destination. It changes no directories
+and exits with status `2` when conflicts block the plan. Preserve existing
+directories and foreign links; do not force past a conflict.
 
-| Agent | `--tool` | Default skill directory |
+Installation has three checks: files link to the intended checkout, the host
+discovers the skills, and a real task produces the expected result. `status`
+covers the first check. Follow [first run](docs/first-run.md) for the other two.
+
+## Choose skills by task
+
+| Profile | Included skills | Use it for |
+|---|---|---|
+| `developer` | `manage-agent-kit`, `mcp-builder`, `source-driven-development` | General engineering and agent integrations |
+| `design` | `manage-agent-kit`, `deepen-design`, `ui-ux-pro-max`, `design-taste-frontend` | Design direction, UI evidence, and frontend preflight |
+| `prototyping` | `manage-agent-kit`, `boundary-demo` | One uncertain contract, state transition, or interaction |
+| `writing` | `manage-agent-kit`, `threads-oral-notes` | Optional Threads oral-note workflow |
+| `base` | `manage-agent-kit` only | Managing the setup; it adds no task skills |
+
+Existing broader installs remain available: `full-stack` combines `developer`,
+`design`, and `prototyping`; `top` adds the optional writing workflow; `all`
+is a compatibility alias for `top`. Choose these deliberately, after a small
+profile has proved useful. [`catalog.json`](catalog.json) is the source of truth
+for profiles, accepted skills, upstream pins, and licenses.
+
+## Compatible hosts and other installers
+
+The native installer provides discovery paths for these six hosts. This is
+compatibility coverage, not a claim that every host has been tested end to end.
+Verify discovery and a task in the host you actually use.
+
+| Host | `--tool` | Default skill directory |
 |---|---|---|
 | Claude Code | `claude` | `~/.claude/skills` |
 | Codex | `codex` | `~/.agents/skills` |
@@ -83,203 +123,49 @@ Supported native targets:
 | Pi | `pi` | `~/.pi/agent/skills` |
 | OpenClaw | `openclaw` | `~/.openclaw/skills` |
 
-Use `--tool all` only when you intentionally want views for all six hosts.
+`--tool core` selects Claude Code and Codex. Use `--tool all` only when you
+intend to create views for all six. Native links point to one canonical
+checkout; updating that checkout changes what its managed hosts read.
 
-### Open skills ecosystem
-
-The open [`skills`](https://github.com/vercel-labs/skills) CLI reaches 70+
-agent integrations and discovers every accepted Agent Kit skill under
-`skills/`.
+For another host, the open [`skills` CLI](https://github.com/vercel-labs/skills)
+can discover Agent Kit's `skills/` tree. Browse first and select named skills:
 
 ```sh
-# Browse before installing
 npm exec --yes --package=skills@1.5.21 -- skills add cubxxw/agent-kit --list
-
-# Example: install every accepted skill for one host
-npm exec --yes --package=skills@1.5.21 -- \
-  skills add cubxxw/agent-kit --global --agent qwen-code --skill '*' --yes
 ```
 
-Replace `qwen-code` with `claude-code`, `codex`, `opencode`, `pi`, `openclaw`,
-or another supported agent identifier.
+Use one distribution manager for each destination. The
+[Top Skills Radar](docs/top-skills.md) is for discovery; it installs nothing.
 
-## Profiles
+## Keep runtime state local
 
-| Profile | Contents | Use it for |
-|---|---|---|
-| `base` | `manage-agent-kit` | Minimal server or first bootstrap |
-| `developer` | base + `mcp-builder` + `source-driven-development` | Backend, infra, MCP, and source-grounded engineering |
-| `design` | base + `deepen-design` + `ui-ux-pro-max` + `design-taste-frontend` | Recursive direction branching, UI/UX intelligence, and anti-slop preflight |
-| `prototyping` | base + `boundary-demo` | Disposable boundary experiments and reusable case/eval evidence |
-| `full-stack` | developer + design + prototyping | Recommended personal workstation |
-| `top` | every broadly useful, fully audited skill | Explicit curated-complete install |
-| `all` | compatibility alias for `top` | Existing automation |
+This public repository contains skills, safe instructions, templates, reviewed
+hook code, and source pins. API keys, tokens, authentication, providers, models,
+sessions, private memory, and machine overrides stay local. CC Switch can
+continue to manage that local runtime state.
 
-[`catalog.json`](catalog.json) is the source of truth. Every third-party entry
-records its repository, upstream directory, full commit SHA, tree SHA, and
-license.
+[`config/`](config/) contains examples to merge consciously. Neither an example
+nor bootstrap authorizes replacing an existing host config. The native
+installer refuses existing directories and foreign links. Upgrades require a
+clean checkout and fast-forward only.
 
-The design stack has three deliberately separate jobs:
-
-1. `deepen-design` branches product truth, narrative, architecture, and
-   composition before implementation.
-2. `ui-ux-pro-max` supplies searchable UI/UX and stack-specific evidence.
-3. `design-taste-frontend` rejects common frontend clichés at final preflight.
-
-Taste rules alone can remove obvious slop while still converging on a polished
-template. Agent Kit therefore never treats a linter, Lighthouse score, or
-self-authored design score as proof of distinctiveness.
-
-Give a design Agent this sentence when the first result is merely polished:
-
-```text
-Use $deepen-design to audit the rendered interface, branch from product truth into two materially different directions, compare before/A/B evidence with the logo hidden, backtrack when both branches remain generic, and only after selecting an ownable architecture use $ui-ux-pro-max and $design-taste-frontend to implement and preflight it.
-```
-
-`boundary-demo` has a different job: turn one uncertain system boundary into a
-runnable probe whose cases can outlive its disposable UI. It chooses one of
-boundary, logic, or taste mode; seeds normal, edge, and failure cases; separates
-observed facts from automated verdicts and human choices; and stops at a
-decision. Streamlit is the default medium for Python/data/state probes, not a
-requirement. New Streamlit probes get project-local `server.runOnSave = true`,
-loopback binding, fake adapters, pytest, and AppTest; technical Streamlit
-guidance is loaded from the version installed in that probe.
-
-```text
-Use $boundary-demo to answer one uncertain integration or state decision with a disposable demo, visible trace, and normal/edge/failure cases. Stop at supported, rejected, or inconclusive; do not turn it into a production app.
-```
-
-## Top, without the bloat
-
-[`docs/top-skills.md`](docs/top-skills.md) organizes high-signal GitHub skill
-sources into adopted, on-demand, and discovery-only layers. It covers official
-OpenAI, Anthropic, Vercel, Microsoft, Hugging Face, NVIDIA, .NET, Supabase,
-Firebase, Prisma, and Remotion sources plus strong specialist and community
-collections.
-
-The radar can be broad because it installs nothing. The `top` profile remains
-small because every included skill must pass license, source-pin, executable,
-overlap, public-boundary, and host-discovery gates.
+## Maintain and verify
 
 ```sh
-./bin/agent-kit install --profile top --tool core --dry-run
-./bin/agent-kit install --profile top --tool core
-```
-
-## How one source reaches every agent
-
-```mermaid
-flowchart LR
-    G["GitHub: cubxxw/agent-kit"] --> C["Local canonical checkout"]
-    C --> K["catalog.json profiles"]
-    K --> S["skills/&lt;name&gt;"]
-    S --> A["Claude Code"]
-    S --> B["Codex"]
-    S --> Q["Qwen Code"]
-    S --> O["OpenCode"]
-    S --> P["Pi"]
-    S --> W["OpenClaw"]
-```
-
-The host directories are discovery views, not storage. Editing or
-fast-forwarding the canonical checkout updates every managed link.
-
-## Agent Kit + CC Switch
-
-These projects solve different layers and work well together:
-
-| Layer | Use | What belongs there |
-|---|---|---|
-| **Agent Kit** | Public, versioned capability layer | Skills, safe instructions, hook logic, source pins, server bootstrap |
-| **[CC Switch](https://github.com/farion1231/cc-switch)** | Private local runtime layer | Providers, API endpoints, keys, models, MCP state, sessions, backups |
-
-In CC Switch, open **Skills → Repository Management → Add Repository**, then
-use:
-
-```text
-Owner: cubxxw
-Name: agent-kit
-Branch: main
-Subdirectory: skills
-```
-
-For one shared source, select `~/.agents/skills` as the CC Switch skill storage
-location and use symlink distribution. Keep provider credentials and CC Switch
-cloud-sync data out of this repository.
-
-## What is shared—and what never is
-
-| Safe to version | Keep local |
-|---|---|
-| Agent Skills and supporting data | API keys, tokens, cookies, OAuth state |
-| Durable public instructions | Provider, model, billing, and routing choices |
-| Deterministic hook logic | Approval history and workspace trust |
-| MCP names and environment-variable names | Actual environment-variable values |
-| Safe config examples | Sessions, memories, transcripts, caches |
-| Source pins, licenses, review records | Private knowledge and machine overrides |
-
-Files under [`config/`](config/) are mergeable examples. They are never a
-license to replace an existing `settings.json`, `config.toml`, or agent
-instruction file.
-
-## The engineering practices behind it
-
-Agent Kit turns recurring corrections into infrastructure:
-
-1. Keep resident context small; load detailed guidance only when it is needed.
-2. Encode repeated mistakes as a rule, test, hook, skill, or script.
-3. Make every completion claim return with observable evidence.
-4. Preview first, preserve conflicts, and keep changes reversible.
-5. Automate the deterministic path; reserve model judgment for real decisions.
-6. Review third-party skill code, license, overlap, and source pin before use.
-
-The dated research and trade-offs are documented in
-[`docs/best-practices.md`](docs/best-practices.md), drawing from
-[Boris Cherny’s workflow thread](https://x.com/bcherny/status/2007179832300581177),
-the evolving [How Boris Uses Claude Code](https://howborisusesclaudecode.com/),
-[CC Switch](https://github.com/farion1231/cc-switch),
-[UI UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill), and
-[Addy Osmani’s Agent Skills](https://github.com/addyosmani/agent-skills), with
-[Taste Skill](https://github.com/Leonxlnx/taste-skill) as the reviewed
-frontend judgment layer.
-
-## Operate it
-
-```sh
-# Safe preview
-./bin/agent-kit install --profile full-stack --tool core --dry-run
-
-# Validate repository, catalog, licenses, and public boundary
 ./bin/agent-kit doctor --strict
-
-# Check managed links
-./bin/agent-kit status --profile full-stack --tool core
-
-# Check whether a pinned upstream skill directory changed
+python3 -m unittest discover -s tests -v
+./bin/agent-kit status --profile developer --tool codex
 ./scripts/check_upstreams.py
-
-# Remove only links owned by this checkout
-./bin/agent-kit uninstall --profile full-stack --tool core --dry-run
+./bin/agent-kit uninstall --profile developer --tool codex --dry-run
 ```
 
-For unattended provisioning, set `AGENT_KIT_PROFILE` and `AGENT_KIT_TOOL`, then
-run [`scripts/bootstrap.sh`](scripts/bootstrap.sh). It only fast-forwards a
-clean checkout.
+For unattended provisioning, use [`scripts/bootstrap.sh`](scripts/bootstrap.sh)
+with `AGENT_KIT_PROFILE` and `AGENT_KIT_TOOL`. Review the
+[bootstrap protocol](docs/bootstrap.md) and [maintenance runbook](docs/maintenance.md).
 
-## Trust, maintenance, and quality
-
-- [Architecture](docs/architecture.md)
-- [Bootstrap protocol](docs/bootstrap.md)
-- [Maintenance runbook](docs/maintenance.md)
-- [Skill selection ledger](docs/skill-selection.md)
-- [Top Skills Radar](docs/top-skills.md)
-- [Boris-style quality review](docs/quality.md)
-- [Security policy](SECURITY.md)
-- [Third-party notices](THIRD_PARTY_NOTICES.md)
-
-If this saves you from maintaining the same agent setup six times, consider
-starring the repository. It makes the project easier to find without making
-the catalog any less selective.
+[Architecture](docs/architecture.md) · [Engineering practices](docs/best-practices.md) ·
+[Selection ledger](docs/skill-selection.md) · [Quality review](docs/quality.md) ·
+[Security policy](SECURITY.md) · [Third-party notices](THIRD_PARTY_NOTICES.md)
 
 ## License
 
