@@ -9,12 +9,13 @@ Agent Kit uses three layers:
 
 | Layer | Meaning | Update policy |
 |---|---|---|
-| **Adopted** | Fully reviewed, pinned, licensed, vendored, tested, and safe for the shared profiles | Install through Agent Kit |
+| **Adopted** | Reviewed, licensed capabilities recorded and validated in the catalog | Install the relevant task profile |
 | **On demand** | High-signal source with a clear specialist use, but unnecessary as global context | Browse, audit one named skill, then install for the relevant project |
 | **Radar** | Useful discovery source or broad framework whose individual entries are not trusted by association | Never bulk-install |
 
-The `top` profile contains every broadly useful skill that passed the full
-adoption gate. The radar can be broad because it installs nothing.
+The `top` profile contains every accepted skill, including optional writing.
+Choose a task profile for a smaller setup. The radar can be broad because it
+installs nothing.
 
 ## Adopted set
 
@@ -22,6 +23,7 @@ adoption gate. The radar can be broad because it installs nothing.
 |---|---|---|
 | `manage-agent-kit` | `cubxxw/agent-kit` | Safe cross-agent initialization, upgrades, and curation |
 | `boundary-demo` | `cubxxw/agent-kit` | One-decision boundary probes with reusable case/eval evidence |
+| `threads-oral-notes` | `cubxxw/agent-kit` | Optional first-person Threads drafts, with exact-draft confirmation before publishing |
 | `deepen-design` | `cubxxw/agent-kit` | Recursive direction branching, pairwise visual critique, and backtracking before polish |
 | `mcp-builder` | [`anthropics/skills`](https://github.com/anthropics/skills) | MCP server design and evaluation |
 | `source-driven-development` | [`addyosmani/agent-skills`](https://github.com/addyosmani/agent-skills) | Implementation grounded in current official sources |

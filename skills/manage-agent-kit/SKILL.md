@@ -5,16 +5,21 @@ description: Audit, initialize, upgrade, synchronize, discover, and safely curat
 
 # Manage Agent Kit
 
-Treat the checked-out `agent-kit` repository as the canonical source. Agent
-hosts receive views of the same skill directories through symlinks.
+Treat the checked-out `agent-kit` repository as the reviewed source. Native
+installs receive symlink views; an existing manager such as CC Switch can own
+distribution instead. Choose one installation owner for each skill.
 
 ## Start with evidence
 
-1. Run `./bin/agent-kit doctor --strict`.
-2. Run `./bin/agent-kit status --profile full-stack --tool core`.
-3. Inspect `catalog.json` before proposing changes.
-4. Read [references/operations.md](references/operations.md) for the relevant
-   operation.
+1. Identify the user's task, current host, and existing skill owner from
+   runtime evidence and link destinations. Do not read private runtime state.
+2. Inspect `catalog.json` and choose the smallest useful profile. For
+   unspecified coding work use `developer`, on the current host only.
+3. Read [references/operations.md](references/operations.md) for the selected
+   installation path. If CC Switch owns the skills, preserve that owner.
+4. For a native checkout run `doctor --strict`, then
+   `plan --profile <profile> --tool <host> --json`. Explain the result the user
+   will get and every conflict before applying the authorized setup.
 
 Do not silently replace a real directory or a symlink owned by another tool.
 Report the exact conflict and preserve it.
@@ -27,17 +32,24 @@ Use the smallest applicable profile:
 - `developer`: source-grounded engineering and agent infrastructure.
 - `design`: recursive direction branching, UI/UX evidence, and frontend
   preflight.
-- `full-stack`: recommended personal workstation.
-- `top`: every broadly useful skill that passed the full adoption gate.
+- `prototyping`: one uncertain decision, tested with observable cases.
+- `writing`: optional first-person Threads drafting and confirmed publishing.
+- `full-stack`: explicitly combine the three engineering profiles.
+- `top`: every accepted skill, including optional writing; choose explicitly.
 - `all`: compatibility alias for `top`.
 
 Preview first:
 
 ```sh
-./bin/agent-kit install --profile full-stack --tool core --dry-run
+./bin/agent-kit plan --profile <profile> --tool <host> --json
 ```
 
-Then install. Use `--replace-managed` only for stale symlinks that already
+The plan is read-only and includes `ready`, `actions`, and `conflicts`.
+With conflicts, return the complete explanation and the next action. Known
+conflicts block the whole install before any link is created. Then install
+the selected profile and verify host discovery and one small task using
+the repository's first-run guide. A same-named file or symlink is not task
+success. Use `--replace-managed` only for stale symlinks that already
 point into this checkout. It must never replace copied files or foreign links.
 
 ## Curate a new skill
@@ -103,10 +115,12 @@ and license evidence belong here.
 
 ## Completion criteria
 
-Finish only when:
+For the selected installation path, finish only when:
 
 - repository validation passes;
 - no public-boundary finding remains;
-- every selected skill is linked into the intended agent directories;
-- all managed links resolve to one canonical source;
+- native links resolve to the reviewed checkout, or manager-owned content
+  matches its recorded version without overwriting local customizations;
+- the current host discovers a selected skill and its first-task result is
+  recorded separately from file verification;
 - conflicts, deferred candidates, radar status, and upstream pins are explicit.

@@ -74,14 +74,22 @@ executable, dependency, permission, and overlap review.
 
 ## Updating this checkout
 
+Keep the profile and host selection already in use. Verify the origin and
+intended branch, and require a clean checkout before a fast-forward update.
+
 ```sh
-git pull --ff-only
+git fetch origin main
+git merge --ff-only FETCH_HEAD
 ./bin/agent-kit doctor --strict
-./bin/agent-kit install --profile full-stack --tool core --dry-run
-./bin/agent-kit install --profile full-stack --tool core --replace-managed
+./bin/agent-kit plan --profile <profile> --tool <host> --json
+./bin/agent-kit install --profile <profile> --tool <host>
 ```
 
-Never use an update command that discards a dirty checkout.
+If the plan identifies a stale link owned by this checkout, append
+`--replace-managed` to both plan and install and read the new plan first.
+Keep foreign links or copied skills on their existing owner's path. Never
+use an update command that discards a dirty checkout. A manager-owned
+installation updates through that manager, not this native sequence.
 
 ## Recovery
 

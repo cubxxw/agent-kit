@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
 from .core import (
@@ -8,6 +9,8 @@ from .core import (
     SUPPORTED_TOOLS,
     install_links,
     installation_status,
+    plan_install_links,
+    render_install_plan,
     scan_public_tree,
     uninstall_links,
     validate_catalog,
@@ -22,6 +25,16 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     tool_choices = ("core", "all", *SUPPORTED_TOOLS)
+
+    plan = subparsers.add_parser("plan", help="Preview all installation actions without changes")
+    plan.add_argument("--profile", default="base")
+    plan.add_argument("--tool", choices=tool_choices, default="core")
+    plan.add_argument("--json", action="store_true", help="Print the versioned plan as JSON")
+    plan.add_argument(
+        "--replace-managed",
+        action="store_true",
+        help="Plan replacements only for stale symlinks pointing into this repository.",
+    )
 
     install = subparsers.add_parser(
         "install", help="Link a profile into one or more agents"
@@ -68,6 +81,16 @@ def print_findings(findings: list) -> None:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        if args.command == "plan":
+            plan = plan_install_links(
+                args.profile, args.tool, replace_managed=args.replace_managed
+            )
+            if args.json:
+                print(json.dumps(plan, indent=2))
+            else:
+                for row in render_install_plan(plan):
+                    print(row)
+            return 0 if plan["ready"] else 2
         if args.command == "install":
             for message in install_links(
                 args.profile,

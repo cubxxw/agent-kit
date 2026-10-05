@@ -1,7 +1,77 @@
 # Skill selection ledger
 
-Evaluated on 2026-09-07. This ledger records why the active catalog stays
-small.
+This ledger records why the active catalog stays small. Entries are dated;
+an adoption decision and its evidence do not imply every downstream result
+has been validated.
+
+## 2026-10-05: complete a useful task before expanding the catalog
+
+### Added as a standalone project-handoff template
+
+- Decision: add `examples/project-handoff/`, without another globally
+  discoverable skill or a new profile.
+- Output: a small project-local record of the goal, observed state, decisions,
+  next action, verification, and existing authority.
+- Reason: handoff is useful across hosts, but a file template can test the
+  value with less routing and maintenance overhead than a new skill.
+- Evidence boundary: the included example is synthetic. Verify whether a
+  receiving agent preserves current work and identifies the next unresolved
+  action before claiming reduced explanation or rework.
+
+### Kept the existing decision and design workflows
+
+- `boundary-demo` already has a public initializer, cases, and portable
+  tests. Add a short first-run task instead of another experimentation skill.
+- `deepen-design` already records a rejected design iteration and a subsequent
+  project delivery. Make its direction-comparison task visible in the README.
+- Those records establish implemented workflows and observed project checks;
+  they do not establish universal design or business effectiveness.
+
+### Classified Threads as optional writing
+
+- `threads-oral-notes` is an accepted first-party skill. Give it the narrow
+  `writing` profile, separate from the engineering `full-stack` profile.
+- `top` and its `all` alias still include every accepted skill. A declared
+  catalog entry must not silently disappear from those complete views.
+- Publishing requires the exact draft confirmed by the user. Installing a
+  writing skill is not permission to post.
+
+### On demand: Chinese language cleanup
+
+- Candidate: [`lieflat-less-ai-tone`](https://moxt.ai/hub?type=skill&id=lieflat-less-ai-tone).
+- Inspected distribution: MIT, attributed to shiujan, supplied as an archive
+  with archive and per-file SHA-256 evidence rather than the Git commit/tree
+  provenance used by the current vendor updater.
+- Value: a narrow editing pass preserves meaning and structure while changing
+  only explicitly listed language patterns. It fits optional writing work.
+- Decision: keep on demand. Do not relabel an archive as first-party code or
+  invent a Git pin to bypass the adoption gate. Before vendoring, establish
+  maintainable source provenance, review all supplied scripts, and evaluate
+  preservation of facts, qualifiers, quotes, and author voice on synthetic
+  examples. Upstream corpus claims are not independent evidence of those
+  editing outcomes.
+
+### Deferred: collaborative and formal diagramming
+
+- Candidates: first-party `excalidraw-architecture` and MIT upstream
+  [`tt-a1i/archify`](https://github.com/tt-a1i/archify).
+- Distinct roles: collaborative exploration versus typed, validated technical
+  delivery. These can justify a separate optional diagramming profile.
+- Decision: keep the existing unpublished integration separate from this
+  onboarding revision. Recheck its frozen source, packaging, executable files,
+  and a first-task artifact before adopting it. Some upstream package scripts
+  refer to files outside the skill subtree; full upstream test success alone
+  is not proof that the isolated vendored package is self-contained.
+
+### Explore as a template: research and continued learning
+
+- Candidate shape: one task-local workspace with source references, current
+  questions, a short resumable state file, and actual practice evidence.
+- Decision: test a synthetic example before creating a skill. Remove personal
+  vault paths and mandatory platform/tool dependencies; reuse a single state
+  record rather than creating a second memory store.
+- The completion criterion is a user's demonstrated explanation or task
+  result. A generated synthesis or a large source count is not that evidence.
 
 ## Adopted
 
@@ -162,7 +232,8 @@ triggering or supply-chain surface.
 - Why: it is the right local UI for provider, endpoint, model, MCP, prompt,
   session, backup, and skill distribution state.
 - Integration: add `cubxxw/agent-kit`, branch `main`, subdirectory `skills` as
-  a custom skill repository; prefer `~/.agents/skills` plus symlink sync.
+  a custom skill repository. Keep an existing manager storage location;
+  verify selected content and host discovery through that manager.
 - Boundary: keys, auth, provider choices, local database, and cloud-sync state
   remain outside this public repository.
 

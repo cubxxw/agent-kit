@@ -90,6 +90,21 @@ class AgentKitTests(unittest.TestCase):
         full_stack = resolve_profile(catalog, "full-stack")
         self.assertEqual("boundary-demo", full_stack[-1])
 
+    def test_writing_install_does_not_expand_the_development_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp) / "codex"
+            with patch.dict(os.environ, {"AGENT_KIT_CODEX_SKILLS_DIR": str(directory)}):
+                try:
+                    install_links("writing", "codex")
+                except AgentKitError as exc:
+                    self.fail(f"The writing profile must be installable: {exc}")
+            self.assertTrue((directory / "threads-oral-notes").is_symlink())
+            self.assertTrue((directory / "manage-agent-kit").is_symlink())
+            self.assertEqual(2, len(list(directory.iterdir())))
+            self.assertNotIn(
+                "threads-oral-notes", resolve_profile(load_catalog(), "full-stack")
+            )
+
     def test_installer_refuses_existing_directory(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

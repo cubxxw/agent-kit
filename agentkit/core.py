@@ -163,6 +163,154 @@ def link_state(destination: Path, source: Path) -> str:
     return "missing"
 
 
+def plan_install_links(
+    profile: str,
+    tool: str = "core",
+    *,
+    replace_managed: bool = False,
+) -> dict:
+    """Inspect every selected destination without changing the filesystem."""
+    catalog = load_catalog()
+    entries = skill_map(catalog)
+    directories = selected_tools(tool)
+    actions: list[dict] = []
+    scheduled: dict[Path, str] = {}
+
+    for name in resolve_profile(catalog, profile):
+        source = None
+        source_error = ""
+        if not SKILL_NAME_RE.fullmatch(name) or len(name) > 64:
+            source_error = (
+                f"Invalid skill name '{name}'. Fix the catalog: use 1-64 lowercase "
+                "letters or digits with single hyphens between words."
+            )
+        elif name not in entries:
+            source_error = f"Profile '{profile}' references unknown skill '{name}'. Fix the catalog."
+        else:
+            source = (ROOT / entries[name]["path"]).resolve()
+            if not is_relative_to(source, ROOT.resolve()):
+                source_error = f"Skill source escapes repository: {source}. Fix the catalog."
+            elif not (source / "SKILL.md").is_file():
+                source_error = f"Skill source is incomplete: {source}. Restore the skill source."
+
+        for tool_name, directory in directories.items():
+            destination = directory.absolute() / name
+            resolved_destination = None
+            if source_error:
+                state, action, reason = "invalid-source", "conflict", source_error
+            else:
+                parent_conflict = next(
+                    (
+                        parent
+                        for parent in (destination.parent, *destination.parent.parents)
+                        if (parent.exists() or parent.is_symlink()) and not parent.is_dir()
+                    ),
+                    None,
+                )
+                if parent_conflict is not None:
+                    state, action = "parent-conflict", "conflict"
+                    reason = (
+                        f"Parent path {parent_conflict} is not a directory. "
+                        "Move it aside explicitly or choose another skills directory."
+                    )
+                else:
+                    resolved_destination = destination.parent.resolve() / destination.name
+                    state = link_state(destination, source)
+                    if state == "missing":
+                        action, reason = "link", "Create a link to the canonical skill source."
+                    elif state == "linked":
+                        action, reason = "noop", "Already linked to this skill source."
+                    elif state == "managed-drift" and replace_managed:
+                        action, reason = "replace", "Replace an old symlink into this repository."
+                    elif state == "managed-drift":
+                        action = "conflict"
+                        reason = (
+                            "Old symlink points into this repository. Rerun with "
+                            "--replace-managed or move it aside explicitly."
+                        )
+                    else:
+                        action = "conflict"
+                        reason = (
+                            "Symlink points outside this repository. "
+                            if state == "foreign-link"
+                            else "A real file or directory occupies this destination. "
+                        ) + "Move it aside explicitly and rerun the plan."
+                    if action in {"link", "replace"}:
+                        if resolved_destination in scheduled:
+                            action = "noop"
+                            reason = (
+                                f"Shares this destination with {scheduled[resolved_destination]}; "
+                                "that planned link covers this tool."
+                            )
+                        else:
+                            scheduled[resolved_destination] = tool_name
+            actions.append(
+                {
+                    "tool": tool_name,
+                    "skill": name,
+                    "source": str(source) if source is not None else None,
+                    "destination": str(destination),
+                    "resolved_destination": str(resolved_destination) if resolved_destination is not None else None,
+                    "state": state,
+                    "action": action,
+                    "reason": reason,
+                }
+            )
+
+    physical_actions = [
+        (
+            row,
+            Path(row["resolved_destination"]),
+        )
+        for row in actions
+        if row["action"] != "conflict"
+    ]
+    mutating_targets = {
+        location: row
+        for row, location in physical_actions
+        if row["action"] in {"link", "replace"}
+    }
+    protected_sources = [(ROOT / entry["path"]).resolve() for entry in entries.values()]
+    for row, location in physical_actions:
+        if any(is_relative_to(location, source) for source in protected_sources):
+            row["state"], row["action"] = "source-conflict", "conflict"
+            row["reason"] = (
+                "This destination is inside a canonical skill source. "
+                "Choose a skills directory outside all canonical skill sources."
+            )
+            continue
+        for parent in Path(row["destination"]).parents:
+            parent_location = parent.parent.resolve() / parent.name
+            if parent_location in mutating_targets and parent_location != location:
+                ancestor = mutating_targets[parent_location]
+                row["state"], row["action"] = "nested-target-conflict", "conflict"
+                row["reason"] = (
+                    f"This destination passes through another planned skill link: "
+                    f"{ancestor['destination']}. Choose non-nested skills directories."
+                )
+                break
+
+    conflicts = [row for row in actions if row["action"] == "conflict"]
+    return {
+        "schema_version": 1,
+        "profile": profile,
+        "ready": not conflicts,
+        "actions": actions,
+        "conflicts": conflicts,
+    }
+
+
+def render_install_plan(plan: dict) -> list[str]:
+    rows = [f"Plan for {plan['profile']}: {'ready' if plan['ready'] else 'blocked'}"]
+    for row in plan["actions"]:
+        rows.append(
+            f"{row['tool']}: {row['skill']} [{row['state']}] {row['action']} "
+            f"{row['source']} -> {row['destination']}: {row['reason']}"
+        )
+    rows.append("No changes made.")
+    return rows
+
+
 def install_links(
     profile: str,
     tool: str = "core",
@@ -170,40 +318,65 @@ def install_links(
     dry_run: bool = False,
     replace_managed: bool = False,
 ) -> list[str]:
-    catalog = load_catalog()
-    entries = skill_map(catalog)
+    plan = plan_install_links(profile, tool, replace_managed=replace_managed)
+    if not plan["ready"]:
+        conflicts = [
+            f"{row['tool']}: {row['destination']} ({row['state']}): {row['reason']}"
+            for row in plan["conflicts"]
+        ]
+        raise AgentKitError("Installation blocked. No changes made.\n" + "\n".join(conflicts))
+
     messages: list[str] = []
-
-    for name in resolve_profile(catalog, profile):
-        if name not in entries:
-            raise AgentKitError(f"Profile '{profile}' references unknown skill '{name}'")
-        source = (ROOT / entries[name]["path"]).resolve()
-        if not (source / "SKILL.md").is_file():
-            raise AgentKitError(f"Skill source is incomplete: {source}")
-        if not is_relative_to(source, ROOT.resolve()):
-            raise AgentKitError(f"Skill source escapes repository: {source}")
-
-        for tool_name, directory in selected_tools(tool).items():
-            destination = directory / name
-            state = link_state(destination, source)
-            prefix = "[dry-run] " if dry_run else ""
-            if state == "linked":
-                messages.append(f"{prefix}{tool_name}: {name} already linked")
-                continue
-            if state == "managed-drift" and replace_managed:
-                if not dry_run:
-                    destination.unlink()
-            elif state != "missing":
-                raise AgentKitError(
-                    f"Refusing to replace {destination} ({state}). "
-                    "Move it aside explicitly, or use --replace-managed for an old "
-                    "agent-kit symlink."
-                )
-
+    completed: list[str] = []
+    canonical_sources = [ROOT / entry["path"] for entry in skill_map(load_catalog()).values()]
+    prefix = "[dry-run] " if dry_run else ""
+    for row in plan["actions"]:
+        tool_name, name = row["tool"], row["skill"]
+        source, destination = Path(row["source"]), Path(row["destination"])
+        if dry_run and row["action"] == "noop":
+            messages.append(f"{prefix}{tool_name}: {name} already linked")
+            continue
+        removed = False
+        try:
             if not dry_run:
-                directory.mkdir(parents=True, exist_ok=True)
+                resolved_destination = destination.parent.resolve() / destination.name
+                if str(resolved_destination) != row["resolved_destination"]:
+                    raise AgentKitError(
+                        f"Destination path changed since preflight: expected "
+                        f"{row['resolved_destination']}, now {resolved_destination}; "
+                        "rerun plan before installing"
+                    )
+                if any(
+                    is_relative_to(resolved_destination, boundary.resolve())
+                    for boundary in canonical_sources
+                ):
+                    raise AgentKitError(
+                        "Destination is now inside a canonical skill source; "
+                        "rerun plan with a skills directory outside all canonical sources"
+                    )
+                current = link_state(destination, source)
+                if current == "linked":
+                    messages.append(f"{tool_name}: {name} already linked")
+                    continue
+                if current != row["state"] or row["action"] == "noop":
+                    raise AgentKitError(
+                        f"Target changed since preflight ({current}); rerun plan before installing"
+                    )
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                if row["action"] == "replace":
+                    destination.unlink()
+                    removed = True
                 destination.symlink_to(source, target_is_directory=True)
-            messages.append(f"{prefix}{tool_name}: linked {name} -> {source}")
+                completed.append(str(destination))
+        except (OSError, AgentKitError) as exc:
+            changed = "\n".join(completed) or "none"
+            removed_note = " The old managed symlink was removed at the failed target." if removed else ""
+            raise AgentKitError(
+                f"Installation stopped at {destination}: {exc}.{removed_note}\n"
+                f"Links completed before the error:\n{changed}\n"
+                "Created parent directories may remain. Inspect these paths and rerun plan."
+            ) from exc
+        messages.append(f"{prefix}{tool_name}: linked {name} -> {source}")
     return messages
 
 

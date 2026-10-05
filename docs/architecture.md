@@ -15,8 +15,9 @@ agent-kit/
           └── ~/.openclaw/skills/<name>        OpenClaw
 ```
 
-The repository is the canonical layer. Agent-specific directories are
-discovery adapters, not storage. First-party and reviewed third-party skills
+The repository is the reviewed content layer. Native agent directories are
+discovery adapters, not storage. An existing distribution manager can own its
+installed copies and updates instead. First-party and reviewed third-party skills
 share the discoverable `skills/` container; `catalog.json` records ownership,
 license, source path, commit pin, and tree pin.
 
@@ -25,9 +26,11 @@ discoverable by CC Switch custom repositories and the open `skills` CLI.
 
 ## Installed catalog versus broad radar
 
-`catalog.json` controls installed capabilities. The `top` profile is the
-curated-complete view of broadly useful, fully audited skills; `all` remains a
-compatibility alias.
+`catalog.json` controls installed capabilities. Task profiles choose narrow
+workflows; `full-stack` combines the three engineering profiles. The `top`
+profile includes every accepted skill, including optional writing; `all`
+remains its compatibility alias. A standalone example does not need a new
+skill or profile.
 
 `docs/top-skills.md` is a non-installing discovery layer. It can index many
 official, specialist, and community sources without adding their descriptions
@@ -100,7 +103,7 @@ private state into Git.
 
 ## Conflict model
 
-The installer recognizes four states:
+Link ownership has these outcomes:
 
 - `linked`: already points to the catalog source;
 - `missing`: safe to create;
@@ -108,7 +111,15 @@ The installer recognizes four states:
   only with `--replace-managed`;
 - `foreign-link` or `conflict`: stop without changing anything.
 
-There is no general force flag.
+The read-only `plan` command enumerates the full selected profile and all
+targets, with states, actions, and reasons. Known conflicts block installation
+before any link is created. Installation rechecks target ownership before
+changing it. Execution-time failures can leave partial progress and report
+completed paths; this is not a filesystem transaction.
+
+There is no general force flag. CC Switch-owned links are foreign to the
+native checkout even when their content is correct; verify them through the
+manager's version/content and host-discovery path.
 
 ## Public boundary
 
