@@ -195,6 +195,7 @@ def plan_install_links(
 
         for tool_name, directory in directories.items():
             destination = directory.absolute() / name
+            resolved_destination = None
             if source_error:
                 state, action, reason = "invalid-source", "conflict", source_error
             else:
@@ -213,6 +214,7 @@ def plan_install_links(
                         "Move it aside explicitly or choose another skills directory."
                     )
                 else:
+                    resolved_destination = destination.parent.resolve() / destination.name
                     state = link_state(destination, source)
                     if state == "missing":
                         action, reason = "link", "Create a link to the canonical skill source."
@@ -234,21 +236,21 @@ def plan_install_links(
                             else "A real file or directory occupies this destination. "
                         ) + "Move it aside explicitly and rerun the plan."
                     if action in {"link", "replace"}:
-                        physical_destination = destination.parent.resolve() / destination.name
-                        if physical_destination in scheduled:
+                        if resolved_destination in scheduled:
                             action = "noop"
                             reason = (
-                                f"Shares this destination with {scheduled[physical_destination]}; "
+                                f"Shares this destination with {scheduled[resolved_destination]}; "
                                 "that planned link covers this tool."
                             )
                         else:
-                            scheduled[physical_destination] = tool_name
+                            scheduled[resolved_destination] = tool_name
             actions.append(
                 {
                     "tool": tool_name,
                     "skill": name,
                     "source": str(source) if source is not None else None,
                     "destination": str(destination),
+                    "resolved_destination": str(resolved_destination) if resolved_destination is not None else None,
                     "state": state,
                     "action": action,
                     "reason": reason,
@@ -258,7 +260,7 @@ def plan_install_links(
     physical_actions = [
         (
             row,
-            Path(row["destination"]).parent.resolve() / Path(row["destination"]).name,
+            Path(row["resolved_destination"]),
         )
         for row in actions
         if row["action"] != "conflict"
@@ -326,6 +328,7 @@ def install_links(
 
     messages: list[str] = []
     completed: list[str] = []
+    canonical_sources = [ROOT / entry["path"] for entry in skill_map(load_catalog()).values()]
     prefix = "[dry-run] " if dry_run else ""
     for row in plan["actions"]:
         tool_name, name = row["tool"], row["skill"]
@@ -336,6 +339,21 @@ def install_links(
         removed = False
         try:
             if not dry_run:
+                resolved_destination = destination.parent.resolve() / destination.name
+                if str(resolved_destination) != row["resolved_destination"]:
+                    raise AgentKitError(
+                        f"Destination path changed since preflight: expected "
+                        f"{row['resolved_destination']}, now {resolved_destination}; "
+                        "rerun plan before installing"
+                    )
+                if any(
+                    is_relative_to(resolved_destination, boundary.resolve())
+                    for boundary in canonical_sources
+                ):
+                    raise AgentKitError(
+                        "Destination is now inside a canonical skill source; "
+                        "rerun plan with a skills directory outside all canonical sources"
+                    )
                 current = link_state(destination, source)
                 if current == "linked":
                     messages.append(f"{tool_name}: {name} already linked")

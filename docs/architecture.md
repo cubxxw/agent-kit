@@ -103,7 +103,7 @@ private state into Git.
 
 ## Conflict model
 
-The installer recognizes four states:
+Link ownership has these outcomes:
 
 - `linked`: already points to the catalog source;
 - `missing`: safe to create;

@@ -165,7 +165,8 @@ with `AGENT_KIT_PROFILE` and `AGENT_KIT_TOOL`. Review the
 
 [Architecture](docs/architecture.md) · [Engineering practices](docs/best-practices.md) ·
 [Selection ledger](docs/skill-selection.md) · [Quality review](docs/quality.md) ·
-[Security policy](SECURITY.md) · [Third-party notices](THIRD_PARTY_NOTICES.md)
+[Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md) ·
+[Third-party notices](THIRD_PARTY_NOTICES.md)
 
 ## License
 

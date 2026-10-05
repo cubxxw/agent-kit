@@ -75,6 +75,8 @@ Native host names are `claude`, `codex`, `qwen`, `opencode`, `pi`, and
 
 The read-only plan contains `ready`, `actions`, and `conflicts`. Each action
 names the skill, tool, source, destination, state, proposed action, and reason.
+`resolved_destination` records the physical target at preview time; installation
+rechecks it before writing and rejects an observed target change.
 Exit code 0 means ready; 2 means a conflict or invalid request. Planning creates
 no destination directories or links. Valid profiles with conflicts still
 return the complete JSON; invalid input can instead return an error on stderr.

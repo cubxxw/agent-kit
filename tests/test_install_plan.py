@@ -236,6 +236,11 @@ class InstallPlanTests(unittest.TestCase):
         }):
             plan = self.json_plan()
             self.assertEqual(["link", "noop"], [row["action"] for row in plan["actions"][:2]])
+            self.assertIn("resolved_destination", plan["actions"][0])
+            self.assertEqual(
+                [str(shared.resolve() / "manage-agent-kit")] * 2,
+                [row["resolved_destination"] for row in plan["actions"][:2]],
+            )
             self.assertEqual([], list(shared.iterdir()))
             install_links("base", "all")
             repeated = install_links("base", "all")
@@ -350,6 +355,61 @@ class InstallPlanTests(unittest.TestCase):
                 self.assertFalse((self.base / "claude").exists())
                 self.assertFalse((self.base / "user-area").exists())
                 self.assertEqual(["SKILL.md"], [path.name for path in source.iterdir()])
+
+    def test_execution_refuses_parent_redirect_after_preflight(self) -> None:
+        repository, source, catalog = self.probe_repository()
+        for redirect_to_source in (True, False):
+            with self.subTest(redirect_to_source=redirect_to_source):
+                scenario = self.base / str(redirect_to_source)
+                safe = scenario / "safe"
+                safe.mkdir(parents=True)
+                redirected = source if redirect_to_source else scenario / "other-safe"
+                if not redirect_to_source:
+                    redirected.mkdir()
+                alias = scenario / "alias"
+                alias.symlink_to(safe, target_is_directory=True)
+                first_host = scenario / "codex"
+                env = {
+                    "AGENT_KIT_CODEX_SKILLS_DIR": str(first_host),
+                    "AGENT_KIT_CLAUDE_SKILLS_DIR": str(alias),
+                }
+
+                def plan_then_parent_redirects(*args: object, **kwargs: object) -> dict:
+                    plan = plan_install_links(*args, **kwargs)
+                    alias.unlink()
+                    alias.symlink_to(redirected, target_is_directory=True)
+                    return plan
+
+                with patch.dict(os.environ, env), patch("agentkit.core.ROOT", repository), patch("agentkit.core.load_catalog", return_value=catalog):
+                    with patch("agentkit.core.plan_install_links", side_effect=plan_then_parent_redirects):
+                        with self.assertRaises(AgentKitError) as caught:
+                            install_links("probe", "core")
+
+                self.assertTrue((first_host / "probe").is_symlink())
+                self.assertIn(str(first_host / "probe"), str(caught.exception))
+                self.assertIn(str(alias / "probe"), str(caught.exception))
+                self.assertIn("rerun plan", str(caught.exception))
+                self.assertEqual([], list(safe.iterdir()))
+                self.assertFalse((redirected / "probe").is_symlink())
+                self.assertEqual(["SKILL.md"], [path.name for path in source.iterdir()])
+
+    def test_execution_rechecks_catalog_source_boundary_before_writing(self) -> None:
+        repository, source, catalog = self.probe_repository()
+        directory = repository / "host"
+        env = {"AGENT_KIT_CODEX_SKILLS_DIR": str(directory)}
+
+        def plan_then_catalog_source_changes(*args: object, **kwargs: object) -> dict:
+            plan = plan_install_links(*args, **kwargs)
+            catalog["skills"].append({"name": "new-canonical-source", "path": "host"})
+            return plan
+
+        with patch.dict(os.environ, env), patch("agentkit.core.ROOT", repository), patch("agentkit.core.load_catalog", return_value=catalog):
+            with patch("agentkit.core.plan_install_links", side_effect=plan_then_catalog_source_changes):
+                with self.assertRaises(AgentKitError):
+                    install_links("probe", "codex")
+
+        self.assertFalse(directory.exists())
+        self.assertEqual(["SKILL.md"], [path.name for path in source.iterdir()])
 
 
 if __name__ == "__main__":

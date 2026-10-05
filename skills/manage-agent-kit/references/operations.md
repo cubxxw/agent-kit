@@ -25,6 +25,8 @@ From the checkout:
 ```
 
 The plan changes nothing. `ready: false` and exit 2 report all known conflicts.
+Each action also records `resolved_destination`; installation rejects a parent
+directory alias that changes that physical target after the preview.
 Invalid requests may return an error on stderr instead of JSON. Explain the
 selected skills, current owner, and next action for each conflict.
 

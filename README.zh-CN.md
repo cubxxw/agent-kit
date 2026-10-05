@@ -110,7 +110,7 @@ python3 -m unittest discover -s tests -v
 
 自动配置可用 [`scripts/bootstrap.sh`](scripts/bootstrap.sh)，通过 `AGENT_KIT_PROFILE` 和 `AGENT_KIT_TOOL` 选择套餐与宿主。具体操作见 [配置协议](docs/bootstrap.md) 和 [维护手册](docs/maintenance.md)。
 
-[架构](docs/architecture.md) · [工程实践](docs/best-practices.md) · [技能取舍](docs/skill-selection.md) · [质量审查](docs/quality.md) · [安全政策](SECURITY.md) · [第三方声明](THIRD_PARTY_NOTICES.md)
+[架构](docs/architecture.md) · [工程实践](docs/best-practices.md) · [技能取舍](docs/skill-selection.md) · [质量审查](docs/quality.md) · [贡献指南](CONTRIBUTING.md) · [安全政策](SECURITY.md) · [第三方声明](THIRD_PARTY_NOTICES.md)
 
 ## 许可证
 
