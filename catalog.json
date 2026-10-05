@@ -141,6 +141,14 @@
       "source": {
         "type": "first-party"
       }
+    },
+    {
+      "name": "threads-oral-notes",
+      "path": "skills/threads-oral-notes",
+      "license": "MIT",
+      "source": {
+        "type": "first-party"
+      }
     }
   ]
 }
