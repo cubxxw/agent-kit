@@ -83,6 +83,23 @@ inputs, private Brain facts, traces, screenshots, and judgments stay in their
 authorized project or evidence store. Product Foundry begins only after a
 decision is accepted and rewrites production code under production gates.
 
+## Diagram stack: exploration and formal proof
+
+The diagramming profile keeps the communication medium aligned with the task:
+
+```text
+open question, workshop, alternatives, live editing
+  → excalidraw-architecture
+
+stable technical claim, typed topology, evidence, validation, delta review
+  → archify
+```
+
+A hybrid workflow explores in Excalidraw and then authors fresh Archify JSON
+from accepted facts. Sketch coordinates never become system truth. Archify's
+vendored package remains byte-stable; the first-party Excalidraw skill owns the
+cross-tool routing contract and the strict-offline caveat.
+
 ## Portability boundary
 
 | Layer | Strategy |

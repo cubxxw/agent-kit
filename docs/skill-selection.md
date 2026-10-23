@@ -51,14 +51,14 @@ has been validated.
   examples. Upstream corpus claims are not independent evidence of those
   editing outcomes.
 
-### Deferred: collaborative and formal diagramming
+### Previously deferred: collaborative and formal diagramming
 
 - Candidates: first-party `excalidraw-architecture` and MIT upstream
   [`tt-a1i/archify`](https://github.com/tt-a1i/archify).
 - Distinct roles: collaborative exploration versus typed, validated technical
   delivery. These can justify a separate optional diagramming profile.
-- Decision: keep the existing unpublished integration separate from this
-  onboarding revision. Recheck its frozen source, packaging, executable files,
+- Historical decision on 2026-10-05: keep the unpublished integration separate
+  from that onboarding revision. The recovery entry below supersedes deferral. Recheck its frozen source, packaging, executable files,
   and a first-task artifact before adopting it. Some upstream package scripts
   refer to files outside the skill subtree; full upstream test success alone
   is not proof that the isolated vendored package is self-contained.
@@ -74,6 +74,25 @@ has been validated.
   result. A generated synthesis or a large source count is not that evidence.
 
 ## Adopted
+
+### Anthropic `frontend-design` (2026-10-15)
+
+- Source: `anthropics/skills`, `skills/frontend-design`, pinned at commit
+  `dbd4588f9e1033efb41dad4bef2f7947c8993d44` and subtree
+  `d79e2a5bb4df4a386c2adcdd9ab8709bba28c3f6`.
+- Decision: adopt in the `design` profile following an explicit request for
+  this official skill. It overlaps existing aesthetic guidance, so use it
+  as an alternative subject-led design pass rather than running every design
+  workflow on every task.
+- Role: compact visual planning, deliberate typography and layout, review
+  against the brief, working UI, and screenshot-based self-critique.
+- Trust: reviewed the complete instructions and included Apache-2.0 license.
+  The subtree contains only `SKILL.md` and `LICENSE.txt`; no executable files
+  or dependencies. Preserve both files byte-for-byte.
+- Companion resources: `VoltAgent/awesome-design-md` is a reference library,
+  while `ComposioHQ/awesome-claude-skills` is a discovery collection. Keep
+  local copies outside agent discovery; do not enable all nested skills.
+
 
 ### First-party `boundary-demo`
 
@@ -216,6 +235,46 @@ has been validated.
   force divergent concepts, visual A/B evidence, or product-derived
   ownability. The first-party `deepen-design` workflow now supplies that
   missing layer without changing the byte-preserved upstream skill.
+
+### First-party `excalidraw-architecture`
+
+- Source: `cubxxw/agent-kit`, promoted from the user's existing local skill.
+- Decision: install in the `diagramming`, `full-stack`, and `top` profiles.
+- Why: repeated architecture workshops and product/system maps need an editable
+  source, free spatial composition, hand-drawn tone, human rearrangement, and a
+  render-plus-screenshot QA loop.
+- Boundary: use it to explore, facilitate, and explain. Route stable formal
+  claims, exact deltas, repository evidence, interactive paths, and
+  deterministic delivery to Archify. A hybrid flow rebuilds typed IR from
+  accepted facts rather than converting sketch geometry.
+- Implementation: editable `.excalidraw` remains authoritative; SVG rendering
+  is Node-only, PNG rendering uses ImageMagick with macOS Quick Look when
+  available, and the validator checks IDs, bindings, phase semantics, minimum
+  type size, contrast, and preview integrity.
+
+### `tt-a1i/archify`
+
+- Source: `tt-a1i/archify`, subtree `archify`, pinned at commit
+  `5875dc81b5c77c7004d7c1d297dda470fce97f50` and tree
+  `1db35965bc62735f36d00db5ffa56bd620f02548`.
+- Decision: vendor byte-stable in the `diagramming`, `full-stack`, and `top`
+  profiles beside, not instead of, Excalidraw.
+- Why: formal architecture work gains typed JSON IR, five diagram modes,
+  deterministic validation and delivery receipts, repository evidence,
+  exact Before / Delta / After review, interactive route/semantic exploration,
+  and crisp export from one checked artifact.
+- Trust: MIT license and attribution are explicit. Runtime and dependency
+  surfaces were reviewed; process calls use argument arrays, repository
+  inspection uses local Git, output writes are guarded and atomically staged,
+  and live preview binds only to `127.0.0.1`. The package does not call a cloud
+  generation API or read credentials.
+- Verification: the isolated skill package runs without runtime dependencies;
+  AJV is development-only and compiled validators ship in the package.
+  See [diagramming](diagramming.md) for the checked commands and packaging
+  boundaries. A historical upstream-suite claim does not verify this copy.
+- Boundary: generated HTML does not upload diagram content, but it requests
+  Google Fonts and includes a user-clicked Archify start link. Use Excalidraw
+  or explicitly harden the HTML when a strict zero-egress artifact is required.
 
 ## Top Skills Radar
 

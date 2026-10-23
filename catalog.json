@@ -25,6 +25,7 @@
       ],
       "skills": [
         "deepen-design",
+        "frontend-design",
         "ui-ux-pro-max",
         "design-taste-frontend"
       ]
@@ -43,6 +44,7 @@
       "extends": [
         "developer",
         "design",
+        "diagramming",
         "prototyping"
       ],
       "skills": []
@@ -70,6 +72,16 @@
         "top"
       ],
       "skills": []
+    },
+    "diagramming": {
+      "description": "Base plus collaborative Excalidraw exploration and validated Archify technical documentation.",
+      "extends": [
+        "base"
+      ],
+      "skills": [
+        "excalidraw-architecture",
+        "archify"
+      ]
     }
   },
   "skills": [
@@ -117,6 +129,19 @@
       }
     },
     {
+      "name": "frontend-design",
+      "path": "skills/frontend-design",
+      "license": "Apache-2.0",
+      "source": {
+        "type": "vendored",
+        "repository": "anthropics/skills",
+        "path": "skills/frontend-design",
+        "track": "main",
+        "ref": "dbd4588f9e1033efb41dad4bef2f7947c8993d44",
+        "tree_sha": "d79e2a5bb4df4a386c2adcdd9ab8709bba28c3f6"
+      }
+    },
+    {
       "name": "ui-ux-pro-max",
       "path": "skills/ui-ux-pro-max",
       "license": "MIT",
@@ -142,6 +167,28 @@
         "ref": "e988add20dab0fa97d7a76781c48961c8184288e",
         "tree_sha": "a6d128e53b4ec0238baee751dde33bf707adb5ec",
         "license_path": "LICENSE"
+      }
+    },
+    {
+      "name": "excalidraw-architecture",
+      "path": "skills/excalidraw-architecture",
+      "license": "MIT",
+      "source": {
+        "type": "first-party"
+      }
+    },
+    {
+      "name": "archify",
+      "path": "skills/archify",
+      "license": "MIT",
+      "source": {
+        "type": "vendored",
+        "repository": "tt-a1i/archify",
+        "path": "archify",
+        "track": "main",
+        "ref": "5875dc81b5c77c7004d7c1d297dda470fce97f50",
+        "tree_sha": "1db35965bc62735f36d00db5ffa56bd620f02548",
+        "license_path": "archify/LICENSE"
       }
     },
     {

@@ -19,9 +19,10 @@ Use one host unless the user wants multiple hosts.
 |---|---|---|
 | General development, source verification, MCP work | `developer` | Source-grounded development and MCP-building guidance |
 | Improve a generic landing page or portfolio | `design` | Direction comparison, UI/UX references, implementation preflight |
+| Explore or formalize technical architecture | `diagramming` | Editable Excalidraw scenes or validated Archify HTML |
 | Test one uncertain integration or state decision | `prototyping` | A small probe with normal, edge, and failure cases |
 | Draft a first-person Threads post | `writing` | A draft to review; publishing still needs the exact draft confirmed |
-| Deliberately combine development, design, and experiments | `full-stack` | The three engineering profiles |
+| Deliberately combine development, design, and experiments | `full-stack` | The development, design, diagramming, and prototyping profiles |
 | Maintain installation only | `base` | The management skill, without a task workflow |
 
 For unspecified coding work, use `developer`. Do not default to `top` or all

@@ -105,6 +105,104 @@ class AgentKitTests(unittest.TestCase):
                 "threads-oral-notes", resolve_profile(load_catalog(), "full-stack")
             )
 
+    def test_diagramming_profile_keeps_both_complementary_media(self) -> None:
+        catalog = load_catalog()
+        profile = resolve_profile(catalog, "diagramming")
+        self.assertEqual(
+            ["manage-agent-kit", "excalidraw-architecture", "archify"],
+            profile,
+        )
+
+    def test_diagram_skills_pass_zero_install_smoke(self) -> None:
+        archify = Path("skills/archify/bin/archify.mjs").resolve()
+        archify_example = Path(
+            "skills/archify/examples/web-app.architecture.json"
+        ).resolve()
+        doctor = subprocess.run(
+            ["node", str(archify), "doctor"],
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        self.assertIn("Archify is ready", doctor.stdout)
+        receipt = subprocess.run(
+            [
+                "node",
+                str(archify),
+                "validate",
+                "architecture",
+                str(archify_example),
+                "--quality",
+                "showcase",
+                "--json",
+            ],
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        self.assertTrue(json.loads(receipt.stdout)["ok"])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            scene = root / "smoke.excalidraw"
+            svg = root / "smoke.svg"
+            scene.write_text(
+                json.dumps(
+                    {
+                        "type": "excalidraw",
+                        "version": 2,
+                        "source": "https://excalidraw.com",
+                        "elements": [
+                            {
+                                "id": "node",
+                                "type": "rectangle",
+                                "x": 0,
+                                "y": 0,
+                                "width": 160,
+                                "height": 80,
+                                "strokeStyle": "solid",
+                                "strokeColor": "#1f1f1d",
+                                "backgroundColor": "#faf9f7",
+                                "customData": {"phase": "v1", "role": "node"},
+                            },
+                            {
+                                "id": "label",
+                                "type": "text",
+                                "x": 24,
+                                "y": 24,
+                                "width": 112,
+                                "height": 24,
+                                "fontSize": 16,
+                                "text": "Smoke test",
+                                "strokeColor": "#1f1f1d",
+                            },
+                        ],
+                        "appState": {"viewBackgroundColor": "#faf9f7"},
+                        "files": {},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            validate = Path(
+                "skills/excalidraw-architecture/scripts/validate-excalidraw.mjs"
+            ).resolve()
+            render = Path(
+                "skills/excalidraw-architecture/scripts/render-excalidraw.mjs"
+            ).resolve()
+            subprocess.run(
+                ["node", str(validate), str(scene)],
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            subprocess.run(
+                ["node", str(render), str(scene), "--svg", str(svg)],
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            self.assertIn("Smoke test", svg.read_text(encoding="utf-8"))
+
     def test_installer_refuses_existing_directory(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
