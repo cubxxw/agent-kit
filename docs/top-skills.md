@@ -25,10 +25,13 @@ installs nothing.
 | `boundary-demo` | `cubxxw/agent-kit` | One-decision boundary probes with reusable case/eval evidence |
 | `threads-oral-notes` | `cubxxw/agent-kit` | Optional first-person Threads drafts, with exact-draft confirmation before publishing |
 | `deepen-design` | `cubxxw/agent-kit` | Recursive direction branching, pairwise visual critique, and backtracking before polish |
+| `frontend-design` | [`anthropics/skills`](https://github.com/anthropics/skills/tree/main/skills/frontend-design) | Subject-led visual direction, typography, layout, and self-critique; explicitly requested adoption on 2026-10-15 |
 | `mcp-builder` | [`anthropics/skills`](https://github.com/anthropics/skills) | MCP server design and evaluation |
 | `source-driven-development` | [`addyosmani/agent-skills`](https://github.com/addyosmani/agent-skills) | Implementation grounded in current official sources |
 | `ui-ux-pro-max` | [`nextlevelbuilder/ui-ux-pro-max-skill`](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | Searchable UI/UX data and stack guidance |
 | `design-taste-frontend` | [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill) | Anti-template frontend constraints and final preflight |
+| `excalidraw-architecture` | `cubxxw/agent-kit` | Collaborative architecture exploration and editable hand-drawn delivery |
+| `archify` | [`tt-a1i/archify`](https://github.com/tt-a1i/archify) | Typed, validated, evidence-aware interactive technical documentation |
 
 `deepen-design` answers “which product-derived direction should exist?”
 `ui-ux-pro-max` answers “what patterns, palettes, stacks, and constraints fit?”
@@ -47,7 +50,7 @@ license, permission, or secret review.
 |---|---|---|
 | [`openai/skills`](https://github.com/openai/skills) | Codex-native document, browser, GitHub, and product workflows | Host-managed; do not vendor tool-coupled skills |
 | [`streamlit/streamlit`](https://github.com/streamlit/streamlit/tree/develop/lib/streamlit/.agents/skills/developing-with-streamlit) | Version-matched Streamlit layout, state, testing, performance, and template guidance | Load from the probe's installed Streamlit package; do not vendor or create global discovery links |
-| [`anthropics/skills`](https://github.com/anthropics/skills) | Claude-compatible documents, frontend, testing, and MCP workflows | Audit per-skill license; `mcp-builder` adopted |
+| [`anthropics/skills`](https://github.com/anthropics/skills) | Claude-compatible documents, frontend, testing, and MCP workflows | Audit per-skill license; `mcp-builder` and `frontend-design` adopted |
 | [`vercel-labs/agent-skills`](https://github.com/vercel-labs/agent-skills) | React/Next.js performance, composition, interface and writing review | Strong on-demand source; avoid installing deployment skills globally |
 | [`MicrosoftDocs/Agent-Skills`](https://github.com/MicrosoftDocs/Agent-Skills) | Microsoft Learn and Azure guidance | On demand for Microsoft/Azure work |
 | [`microsoft/azure-skills`](https://github.com/microsoft/azure-skills) | Azure planning, cost, reliability, migration, and deployment | On demand; project credentials remain local |
@@ -78,7 +81,6 @@ have higher overlap and triggering risk than narrow specialist skills.
 | [`JimLiu/baoyu-skills`](https://github.com/JimLiu/baoyu-skills) | Chinese content, URL ingestion, transcripts, images, and publishing workflows | Keep Brain-specific installs repository-scoped |
 | [`OthmanAdi/planning-with-files`](https://github.com/OthmanAdi/planning-with-files) | Durable file-based planning across compaction and long tasks | Strong candidate when current goal/task state is insufficient |
 | [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) | Large science and research workflow collection | Vertical; select by scientific task |
-| [`tt-a1i/archify`](https://github.com/tt-a1i/archify) | Verifiable animated architecture diagrams | Compare against existing Excalidraw/visualization skills first |
 | [`Agents365-ai/drawio-skill`](https://github.com/Agents365-ai/drawio-skill) | Editable Draw.io, C4, UML, BPMN, and network diagrams | On-demand diagram candidate |
 
 ## Discovery and security infrastructure
@@ -89,6 +91,7 @@ have higher overlap and triggering risk than narrow specialist skills.
 | [`github/awesome-copilot`](https://github.com/github/awesome-copilot) | GitHub-hosted community examples and instructions | Community entries require individual review |
 | [`VoltAgent/awesome-agent-skills`](https://github.com/VoltAgent/awesome-agent-skills) | Broad cross-agent directory | Never bulk-install from an awesome list |
 | [`ComposioHQ/awesome-claude-skills`](https://github.com/ComposioHQ/awesome-claude-skills) | Claude-oriented discovery directory | Links may have different or missing licenses |
+| [`VoltAgent/awesome-design-md`](https://github.com/VoltAgent/awesome-design-md) | Community analyses of brand websites as `DESIGN.md` references | Reference library, no `SKILL.md`; select a reference for a specific project |
 | [`NVIDIA/SkillSpector`](https://github.com/NVIDIA/SkillSpector) | Static and optional semantic security scan before adoption | Scanner findings need human triage; it does not replace executable review |
 
 ## Safe discovery command

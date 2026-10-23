@@ -97,16 +97,31 @@ covers the first check. Follow [first run](docs/first-run.md) for the other two.
 | Profile | Included skills | Use it for |
 |---|---|---|
 | `developer` | `manage-agent-kit`, `mcp-builder`, `source-driven-development` | General engineering and agent integrations |
-| `design` | `manage-agent-kit`, `deepen-design`, `ui-ux-pro-max`, `design-taste-frontend` | Design direction, UI evidence, and frontend preflight |
+| `design` | `manage-agent-kit`, `deepen-design`, `frontend-design`, `ui-ux-pro-max`, `design-taste-frontend` | Design direction, UI evidence, and frontend preflight |
+| `diagramming` | base + `excalidraw-architecture` + `archify` | Editable architecture exploration and validated formal diagrams |
 | `prototyping` | `manage-agent-kit`, `boundary-demo` | One uncertain contract, state transition, or interaction |
 | `writing` | `manage-agent-kit`, `threads-oral-notes` | Optional Threads oral-note workflow |
 | `base` | `manage-agent-kit` only | Managing the setup; it adds no task skills |
 
 Existing broader installs remain available: `full-stack` combines `developer`,
-`design`, and `prototyping`; `top` adds the optional writing workflow; `all`
+`design`, `diagramming`, and `prototyping`; `top` adds the optional writing
+workflow; `all`
 is a compatibility alias for `top`. Choose these deliberately, after a small
 profile has proved useful. [`catalog.json`](catalog.json) is the source of truth
 for profiles, accepted skills, upstream pins, and licenses.
+
+The [diagramming contract](docs/diagramming.md) covers dependencies, supported
+exports, acceptance commands, and standalone-package limits. Its two media
+serve different jobs:
+
+1. `excalidraw-architecture` supports workshops, evolving structure, live
+   human editing, hand-drawn explanation, and editable `.excalidraw` handoff.
+2. `archify` freezes typed architecture, workflow, sequence, data-flow, or
+   lifecycle facts into validated standalone HTML with deterministic receipts.
+
+Use Excalidraw to discover the shape and Archify to formalize it only when both
+stages add value. Formal storage, cache, latency, ownership, repository
+evidence, or Before / Delta / After review should normally start in Archify.
 
 ## Compatible hosts and other installers
 

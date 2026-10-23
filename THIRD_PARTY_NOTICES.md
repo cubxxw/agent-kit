@@ -1,5 +1,13 @@
 # Third-party notices
 
+## Anthropic Frontend Design
+
+- Source: <https://github.com/anthropics/skills/tree/main/skills/frontend-design>
+- Pinned commit: `dbd4588f9e1033efb41dad4bef2f7947c8993d44`
+- Local path: `skills/frontend-design`
+- License: Apache License 2.0
+- Changes: upstream instructions and `LICENSE.txt` preserved byte-for-byte.
+
 ## Anthropic MCP Builder
 
 - Source: <https://github.com/anthropics/skills/tree/main/skills/mcp-builder>
@@ -42,3 +50,15 @@ The complete upstream license is retained at
 - License: MIT
 - Changes: skill content preserved; the repository-root MIT license is copied
   to `LICENSE.txt` inside the distributed skill.
+
+## Archify
+
+- Source: <https://github.com/tt-a1i/archify/tree/main/archify>
+- Pinned commit: `5875dc81b5c77c7004d7c1d297dda470fce97f50`
+- Local path: `skills/archify`
+- License: MIT
+- Changes: upstream skill content is preserved; its included `LICENSE` is also
+  copied to `LICENSE.txt` for Agent Kit's vendored-skill contract.
+
+Archify retains attribution to tt-a1i and the original Cocoon AI
+`architecture-diagram-generator` project in both license files.

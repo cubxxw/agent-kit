@@ -30,11 +30,14 @@ Use the smallest applicable profile:
 
 - `base`: only this management skill.
 - `developer`: source-grounded engineering and agent infrastructure.
-- `design`: recursive direction branching, UI/UX evidence, and frontend
-  preflight.
+- `design`: recursive direction branching, official frontend guidance, UI/UX
+  evidence, and frontend preflight.
+- `diagramming`: collaborative Excalidraw exploration and validated Archify
+  technical documentation.
 - `prototyping`: one uncertain decision, tested with observable cases.
 - `writing`: optional first-person Threads drafting and confirmed publishing.
-- `full-stack`: explicitly combine the three engineering profiles.
+- `full-stack`: explicitly combine development, design, diagramming, and
+  prototyping.
 - `top`: every accepted skill, including optional writing; choose explicitly.
 - `all`: compatibility alias for `top`.
 

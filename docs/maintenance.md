@@ -105,6 +105,8 @@ Uninstall removes only links that resolve to the current checkout.
 
 - Unit tests pass.
 - Skill creator validation passes for first-party skills.
+- Archify doctor plus one showcase validation pass without `node_modules`.
+- Excalidraw validation plus one SVG render pass without external packages.
 - Substantial first-party workflow changes pass a context-isolated forward
   test on a realistic artifact.
 - `doctor --strict` passes.

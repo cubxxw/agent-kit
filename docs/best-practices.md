@@ -1,6 +1,6 @@
 # Engineering guide
 
-Reviewed on 2026-08-05. Product behavior and agent discovery paths can change;
+Reviewed on 2026-08-11. Product behavior and agent discovery paths can change;
 source links are included so compatibility claims can be rechecked.
 
 ## What the research changed
@@ -218,6 +218,39 @@ Production evidence:
 
 The result is evidence that the workflow can reach production safely. It is not
 an absolute taste score or a substitute for future user preference.
+
+### Excalidraw and Archify
+
+Sources:
+[Excalidraw](https://github.com/excalidraw/excalidraw) and
+[tt-a1i/archify](https://github.com/tt-a1i/archify).
+
+Adopted:
+
+- a first-party Excalidraw workflow for collaborative exploration, editable
+  handoff, deterministic source checks, rendering, and visual QA;
+- pinned Archify 2.13 for typed technical diagrams, repository evidence,
+  exact architecture deltas, artifact validation, and atomic HTML delivery;
+- a medium-selection rule: use Excalidraw to move the question and Archify to
+  freeze a stable, inspectable technical claim.
+
+Boundary retained:
+
+- do not convert Excalidraw coordinates into Archify topology; rebuild from
+  accepted facts;
+- do not invent latency, consistency, cache, or failure guarantees;
+- use Excalidraw or harden the Archify artifact when strict zero-egress HTML is
+  required, because the current template requests Google Fonts and exposes a
+  user-clicked product link.
+
+Review result:
+
+- Archify's MIT license, full commit, and subtree pins are recorded;
+- runtime and dependency surfaces were manually reviewed;
+- Archify core acceptance is recorded in [diagramming](diagramming.md);
+  upstream website/release tests require files outside the vendored subtree;
+- Archify performs no cloud generation call, reads no credentials, stages
+  output atomically, and binds optional preview to loopback only.
 
 ### Open skills CLI
 

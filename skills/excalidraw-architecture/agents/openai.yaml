@@ -1,0 +1,4 @@
+interface:
+  display_name: "Excalidraw 协作架构图"
+  short_description: "探索、协作并交付可编辑的手绘感架构图，必要时路由到 Archify"
+  default_prompt: "用 $excalidraw-architecture 先判断这个任务更适合 Excalidraw 还是 Archify；如果适合白板探索，就产出可编辑场景并完成视觉验收。"
