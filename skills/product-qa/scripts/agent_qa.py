@@ -576,7 +576,7 @@ def build_project(config, config_path, name, reviewed_origin):
     entitlements.write_bytes(plistlib.dumps(qa_entitlements("$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)", base_entitlements)))
     derived = artifact / "DerivedData"
     args = [session, "run", "--udid", build_device, "--timeout", "30", "--", "xcodebuild", "-project", str(Path(project).expanduser()), "-scheme", scheme,
-            "-configuration", recipe.get("configuration", "Debug"), "-sdk", "iphonesimulator", "-destination", "generic/platform=iOS Simulator", "-derivedDataPath", str(derived), "-jobs", "2",
+            "-configuration", recipe.get("configuration", "Debug"), "-destination", "generic/platform=iOS Simulator", "-derivedDataPath", str(derived), "-jobs", "2",
             "CODE_SIGNING_ALLOWED=YES", "CODE_SIGNING_REQUIRED=NO", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual", "DEVELOPMENT_TEAM=", "ONLY_ACTIVE_ARCH=YES", "CODE_SIGN_ENTITLEMENTS=" + str(entitlements), "build"]
     env = {**os.environ, "IOS_XCODE_JOBS": "2", "PATH": str(Path.home() / ".local/bin") + os.pathsep + os.environ.get("PATH", "/usr/bin:/bin")}
     log = artifact / "build.log"
