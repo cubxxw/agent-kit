@@ -231,7 +231,7 @@ class ProductQATests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);project=root/"Example.xcodeproj";project.mkdir();(project/"project.pbxproj").write_text("original project")
             artifact=root/"artifact";artifact.mkdir();spec=root/"project.yml";spec.write_text("name: Example\n")
-            def regenerate(args): (project/"project.pbxproj").write_text("regenerated project")
+            def regenerate(args, **kwargs): (project/"project.pbxproj").write_text("regenerated project")
             with patch.object(self.qa,"find_helper",return_value="xcodegen"),patch.object(self.qa,"command",side_effect=regenerate):
                 self.qa.generate_project({"project":str(project),"generate_spec":str(spec)},artifact)
             self.assertEqual("original project",(artifact/"original-project.xcodeproj/project.pbxproj").read_text())
