@@ -539,6 +539,16 @@ def find_helper(name):
     return str(local) if local.is_file() and os.access(local, os.X_OK) else None
 
 
+def generate_project(recipe, artifact):
+    if not recipe.get("generate_spec"): return
+    generator = find_helper("xcodegen")
+    spec = Path(recipe["generate_spec"]).expanduser()
+    project = Path(recipe["project"]).expanduser()
+    if not generator or not spec.is_file(): raise QAError("registered native project generator is unavailable")
+    if project.is_dir(): shutil.copytree(project, Path(artifact) / "original-project.xcodeproj", symlinks=True)
+    command([generator, "generate", "--spec", str(spec), "--project", str(project.parent)], timeout=90)
+
+
 def build_project(config, config_path, name, reviewed_origin):
     validate_project_name(name)
     p = config["projects"][name]
@@ -553,6 +563,7 @@ def build_project(config, config_path, name, reviewed_origin):
     if not guard or not session: raise QAError("native build requires the installed storage guard and simulator session helper")
     artifact = Path(command([guard, "new-artifact", "agent-qa-" + name]).strip())
     if not artifact.is_absolute() or not artifact.is_dir(): raise QAError("storage guard did not issue an artifact directory")
+    generate_project(recipe, artifact)
     entitlements = artifact / "SimulatorQA.entitlements"
     base_entitlements = {}
     if recipe.get("entitlements"):

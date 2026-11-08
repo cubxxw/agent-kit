@@ -227,6 +227,16 @@ class ProductQATests(unittest.TestCase):
             with patch.object(self.qa.shutil,"which",return_value=None),patch.object(self.qa.Path,"home",return_value=home):
                 self.assertEqual(str(tool),self.qa.find_helper("dev-ios-session"))
 
+    def test_project_regeneration_preserves_the_existing_generated_project(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);project=root/"Example.xcodeproj";project.mkdir();(project/"project.pbxproj").write_text("original project")
+            artifact=root/"artifact";artifact.mkdir();spec=root/"project.yml";spec.write_text("name: Example\n")
+            def regenerate(args): (project/"project.pbxproj").write_text("regenerated project")
+            with patch.object(self.qa,"find_helper",return_value="xcodegen"),patch.object(self.qa,"command",side_effect=regenerate):
+                self.qa.generate_project({"project":str(project),"generate_spec":str(spec)},artifact)
+            self.assertEqual("original project",(artifact/"original-project.xcodeproj/project.pbxproj").read_text())
+            self.assertEqual("regenerated project",(project/"project.pbxproj").read_text())
+
     def test_xcode_metadata_probe_is_not_an_active_build(self):
         class Result:
             returncode=0
