@@ -4,6 +4,8 @@ import importlib.util
 import json
 import os
 import plistlib
+import contextlib
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -227,17 +229,55 @@ class ProductQATests(unittest.TestCase):
         with patch.object(self.qa.subprocess,"run",side_effect=[Result("123\n"),Result("/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -scheme Example")]):
             self.assertTrue(self.qa.active_builds())
 
+    def test_completed_zombie_xcode_process_does_not_block_entry(self):
+        class Result:
+            returncode=0
+            def __init__(self,stdout):self.stdout=stdout
+        with patch.object(self.qa.subprocess,"run",side_effect=[Result("123\n"),Result("Z (xcodebuild)")]):
+            self.assertFalse(self.qa.active_builds())
+
     def test_qa_signing_assigns_an_isolated_keychain_group(self):
         original={"keychain-access-groups":["FOREIGN.production"],"com.apple.security.application-groups":["group.example.qa"]}
         result=self.qa.qa_entitlements("com.example.qa",original)
-        self.assertEqual("AGENTQA000.com.example.qa",result["application-identifier"])
-        self.assertEqual(["AGENTQA000.com.example.qa"],result["keychain-access-groups"])
+        self.assertEqual("com.example.qa",result["application-identifier"])
+        self.assertEqual(["com.example.qa"],result["keychain-access-groups"])
+        self.assertNotIn("com.apple.application-identifier",result)
+        self.assertNotIn("com.apple.developer.team-identifier",result)
         self.assertEqual(original["com.apple.security.application-groups"],result["com.apple.security.application-groups"])
         self.assertEqual(["FOREIGN.production"],original["keychain-access-groups"])
 
     def test_prepare_refuses_an_unreviewed_server_before_copying_a_build(self):
         with self.assertRaises(self.qa.QAError):
             self.qa.prepare_build({"projects":{"example":profile()}},Path("unused"),"example",Path("missing.app"),"https://foreign.example.invalid")
+
+    def test_prepare_never_signs_a_physical_device_build(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app=Path(tmp)/"Example.app";app.mkdir()
+            (app/"Info.plist").write_bytes(plistlib.dumps({"CFBundleIdentifier":"com.example.qa","DTPlatformName":"iphoneos"}))
+            with patch.object(self.qa,"command") as run:
+                with self.assertRaises(self.qa.QAError):self.qa.prepare_build({"projects":{"example":profile()}},Path(tmp)/"config.json","example",app,profile()["server"])
+                run.assert_not_called()
+
+    def test_prepare_cannot_sign_a_link_outside_its_private_copy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);app=root/"Example.app";app.mkdir()
+            (app/"Info.plist").write_bytes(plistlib.dumps({"CFBundleIdentifier":"com.example.qa","DTPlatformName":"iphonesimulator"}))
+            external=root/"Foreign.framework";external.mkdir();(external/"keep").write_text("original")
+            (app/"Foreign.framework").symlink_to(external,target_is_directory=True)
+            with patch.object(self.qa.Path,"home",return_value=root/"home"),patch.object(self.qa,"SharedLock",return_value=contextlib.nullcontext()),patch.object(self.qa,"command") as run:
+                with self.assertRaises(self.qa.QAError):self.qa.prepare_build({"projects":{"example":profile()}},root/"config.json","example",app,profile()["server"])
+                run.assert_not_called()
+            self.assertEqual("original",(external/"keep").read_text())
+
+    def test_simulator_entitlements_are_read_from_linked_macho_metadata(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            value={"application-identifier":"com.example.qa","keychain-access-groups":["com.example.qa"]}
+            payload=plistlib.dumps(value);length=72+80;offset=32+length
+            header=struct.pack("<8I",0xFEEDFACF,0x100000C,0,2,1,length,0,0)
+            segment=struct.pack("<II16sQQQQiiII",0x19,length,b"__TEXT",0,4096,0,4096,7,5,1,0)
+            section=struct.pack("<16s16sQQIIIIIIII",b"__entitlements",b"__TEXT",offset,len(payload),offset,0,0,0,0,0,0,0)
+            path=Path(tmp)/"Example";path.write_bytes(header+segment+section+payload)
+            self.assertEqual(value,self.qa.simulated_entitlements(path))
 
 
 if __name__ == "__main__":

@@ -10,14 +10,16 @@ app. The private machine registry lives at `$HOME/.config/agent-qa/projects.json
 Do not print it: it contains private server and identity configuration. The
 password is referenced by OS keychain service/account and is read at runtime.
 
-For a new simulator build, review its actual backend selection, then use
-`agent-qa prepare <project> --app <simulator.app> --reviewed-origin <origin>`.
-This copies the build to a private QA artifact, applies local ad-hoc simulator
-signing with a per-app keychain access group, installs it and pins the resulting
-app tree. The original build is preserved. Unsigned simulator builds can pass
-password authentication yet fail to save a native session; do not work around
-that failure with plaintext storage or repeated password attempts. Physical
-device builds and publishing are excluded from preparation.
+For a new simulator build, review its actual backend selection. With a private
+project/scheme recipe, `agent-qa build <project> --reviewed-origin <origin>`
+uses Xcode's standard signing and linked Simulator entitlements. To reuse a
+properly built app, use `agent-qa prepare <project> --app <simulator.app>
+--reviewed-origin <origin>`. Preparation validates the linked keychain identity,
+preserves Xcode's signature, installs a private copy and pins the app tree.
+Missing Simulator entitlements can allow password authentication but prevent
+session storage. Do not put simulated iOS claims into the macOS host signature
+or use plaintext session storage. Physical-device builds and publishing are
+excluded from these commands.
 
 `agent-qa open` checks the password against the pinned server, confirms its
 canonical account UUID/email, revokes only that temporary verification session,

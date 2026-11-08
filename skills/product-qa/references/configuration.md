@@ -4,13 +4,21 @@ Requires macOS, Xcode Simulator tools, AXe, Python 3.9+, an unlocked user
 keychain and a GUI login session for boot monitoring. Use an existing simulator
 and build; the launcher does not build, erase or create devices.
 
-Prepare each reviewed simulator build once with `agent-qa prepare <project>
---app <source.app> --reviewed-origin <origin>`. Only a matching simulator bundle
-is accepted. A private copy is signed locally with an isolated QA application
-identifier and keychain group; nested code is signed and verified, then the
-registered device receives that copy. This requires no Apple signing secret.
-Repeat after a source build changes. This explicit preparation refreshes the
-native fingerprint without silently trusting an unexpected installed app.
+Each private profile can provide `build: {project, scheme, configuration}`.
+`agent-qa build <project> --reviewed-origin <origin>` obtains a registered storage
+artifact and runs Xcode inside the existing simulator session helper, using two
+jobs and standard Simulator entitlement handling without an Apple publishing
+identity. Source copies and logs remain private. The build must produce the
+registered bundle identifier.
+
+Reuse a reviewed build with `agent-qa prepare <project> --app <source.app>
+--reviewed-origin <origin>`. Only matching Simulator bundles with linked keychain
+identity metadata are accepted. Preparation verifies the existing signature and
+installs a private copy without rewriting its entitlements. Repeat after source
+build changes. This refreshes the fingerprint without silently trusting an
+unexpected installed app. Simulator entitlement metadata belongs in Mach-O
+`__TEXT,__entitlements`/`__TEXT,__ents_der`, distinct from the host signature;
+see [Swift Build's entitlement checks](https://github.com/swiftlang/swift-build/blob/main/Sources/SwiftBuildTestSupport/CoreQualificationTester.swift).
 
 Store `$HOME/.config/agent-qa/projects.json` with mode 600. Top-level fields:
 `schema_version: 1`, `axe` (executable), `default_project`, `projects` (name to

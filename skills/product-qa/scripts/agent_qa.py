@@ -9,9 +9,11 @@ import http.cookiejar
 import json
 import os
 import plistlib
+import platform
 import re
 import shutil
 import subprocess
+import struct
 import sys
 import time
 import uuid
@@ -58,6 +60,11 @@ def validate_profile(p):
     if any("PASSWORD" in k.upper() or "TOKEN" in k.upper() for k in p.get("launch_env", {})):
         raise QAError("launch environments cannot contain passwords or session tokens")
     return p
+
+
+def validate_project_name(name):
+    if not isinstance(name, str) or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name):
+        raise QAError("project names must be simple lowercase identifiers")
 
 
 class NoRedirect(request.HTTPRedirectHandler):
@@ -206,8 +213,8 @@ class UI:
         matches = [x for x in (items if items is not None else self.tree()) if self.matches(x, selector)]
         if "type" not in selector:
             controls = [x for x in matches if x.get("type") in ("Button", "TextField", "SecureTextField", "RadioButton", "Switch", "CheckBox", "Slider")]
-            if controls: return controls[0]
-        return matches[0] if matches else None
+            if controls: return max(controls, key=lambda x: len(x.get("_parents", [])))
+        return max(matches, key=lambda x: len(x.get("_parents", []))) if matches else None
 
     def wait(self, selector, timeout=15):
         end = time.monotonic() + timeout
@@ -231,6 +238,14 @@ class UI:
             args += ["--" + ("element-type" if k == "type" else k), str(v)]
         if "type" not in selector and item.get("type"):
             args += ["--element-type", item["type"]]
+        candidates = [x for x in self.tree() if self.matches(x, selector) and x.get("type") == item.get("type")]
+        if len(candidates) > 1:
+            # Modal sheets can leave identically named parent toolbar buttons
+            # in the tree. Use the observed foreground element, not a fixed tap.
+            item = max(candidates, key=lambda x: len(x.get("_parents", [])))
+            frame = item.get("frame") or {}
+            if not frame.get("width") or not frame.get("height"): raise QAError("ambiguous UI control has no actionable frame")
+            args = [self.executable, "tap", "--udid", self.device, "-x", str(frame["x"] + frame["width"] / 2), "-y", str(frame["y"] + frame["height"] / 2)]
         try:
             command(args)
         except QAError:
@@ -262,6 +277,8 @@ class UI:
 
     def steps(self, steps):
         for step in steps:
+            if step.get("if_absent") and self.find(step["if_absent"]) is not None:
+                continue
             action = step["action"]
             if action == "tap":
                 self.tap(step["selector"], timeout=step.get("timeout", 6), optional=step.get("optional", False))
@@ -307,9 +324,10 @@ def active_builds():
     if listed.returncode != 0: return False
     for pid in listed.stdout.split():
         if not pid.isdigit(): continue
-        proc = subprocess.run(["/bin/ps", "-p", pid, "-o", "command="], capture_output=True, text=True)
+        proc = subprocess.run(["/bin/ps", "-p", pid, "-o", "state=,command="], capture_output=True, text=True)
         if proc.returncode or not proc.stdout.strip(): continue
         words = proc.stdout.split()
+        if words[0].startswith("Z"): continue
         mutations = {"build", "test", "test-without-building", "build-for-testing", "archive", "clean", "analyze", "install", "-exportArchive"}
         metadata = {"-version", "-list", "-showsdks", "-showdestinations", "-showBuildSettings", "-find-executable", "-find-library"}
         if not mutations.intersection(words) and metadata.intersection(words): continue
@@ -393,12 +411,60 @@ def native_digest(binary):
 
 
 def qa_entitlements(bundle_id, original=None):
-    if not re.fullmatch(r"[A-Za-z0-9.-]+", bundle_id): raise QAError("invalid native bundle identifier")
+    if bundle_id != "$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)" and not re.fullmatch(r"[A-Za-z0-9.-]+", bundle_id): raise QAError("invalid native bundle identifier")
     values = dict(original or {})
-    identifier = "AGENTQA000." + bundle_id
-    values.update({"application-identifier": identifier, "com.apple.application-identifier": identifier,
-                   "com.apple.developer.team-identifier": "AGENTQA000", "keychain-access-groups": [identifier], "get-task-allow": True})
+    values.pop("com.apple.application-identifier", None)
+    values.pop("com.apple.developer.team-identifier", None)
+    values.update({"application-identifier": bundle_id, "keychain-access-groups": [bundle_id], "get-task-allow": True})
     return values
+
+
+def simulated_entitlements(binary):
+    """Read the Simulator's linked metadata, not the macOS host signature."""
+    try:
+        with Path(binary).open("rb") as source:
+            header = source.read(32)
+            base = 0
+            if len(header) == 32 and struct.unpack_from("<I", header)[0] != 0xFEEDFACF:
+                magic, architectures = struct.unpack_from(">II", header)
+                if magic not in (0xCAFEBABE, 0xCAFEBABF) or architectures > 32: return {}
+                width = 32 if magic == 0xCAFEBABF else 20
+                source.seek(8)
+                table = source.read(architectures * width)
+                desired = 0x0100000C if platform.machine() in ("arm64", "aarch64") else 0x01000007
+                for index in range(architectures):
+                    offset = index * width
+                    if struct.unpack_from(">I", table, offset)[0] == desired:
+                        base = struct.unpack_from(">Q" if width == 32 else ">I", table, offset + 8)[0]
+                        break
+                if not base: return {}
+                source.seek(base)
+                header = source.read(32)
+            if len(header) != 32 or struct.unpack_from("<I", header)[0] != 0xFEEDFACF: return {}
+            count, size = struct.unpack_from("<II", header, 16)
+            if count > 4096 or size > 1024 * 1024: raise QAError("invalid simulator executable load commands")
+            commands = source.read(size)
+            offset = 0
+            for _ in range(count):
+                if offset + 8 > len(commands): raise QAError("truncated simulator executable metadata")
+                kind, length = struct.unpack_from("<II", commands, offset)
+                if length < 8 or offset + length > len(commands): raise QAError("invalid simulator load command")
+                if kind == 0x19 and length >= 72 and commands[offset + 8:offset + 24].rstrip(b"\0") == b"__TEXT":
+                    sections = struct.unpack_from("<I", commands, offset + 64)[0]
+                    if 72 + sections * 80 > length: raise QAError("invalid simulator section metadata")
+                    for index in range(sections):
+                        section = offset + 72 + index * 80
+                        if commands[section:section + 16].rstrip(b"\0") == b"__entitlements":
+                            payload_size = struct.unpack_from("<Q", commands, section + 40)[0]
+                            position = struct.unpack_from("<I", commands, section + 48)[0]
+                            if payload_size > 1024 * 1024: raise QAError("simulator entitlement metadata is too large")
+                            source.seek(base + position)
+                            value = plistlib.loads(source.read(payload_size).rstrip(b"\0"))
+                            return value if isinstance(value, dict) else {}
+                offset += length
+    except (OSError, ValueError, plistlib.InvalidFileException, struct.error):
+        raise QAError("simulator entitlement metadata could not be read") from None
+    return {}
 
 
 def read_entitlements(app):
@@ -408,6 +474,7 @@ def read_entitlements(app):
 
 
 def prepare_build(config, config_path, name, source_app, reviewed_origin):
+    validate_project_name(name)
     p = config["projects"][name]
     if reviewed_origin.rstrip("/") != p["server"].rstrip("/"):
         raise QAError("the reviewed native origin differs from the registered server")
@@ -419,21 +486,23 @@ def prepare_build(config, config_path, name, source_app, reviewed_origin):
         raise QAError("source app does not match the registered test bundle")
     if not str(info.get("DTPlatformName", "")).endswith("simulator"):
         raise QAError("only simulator builds may receive local QA signing")
+    for path in source_app.rglob("*"):
+        if path.is_symlink() and not path.resolve().is_relative_to(source_app):
+            raise QAError("source simulator bundle contains an external link")
+    linked = simulated_entitlements(source_app / info.get("CFBundleExecutable", ""))
+    identifier = linked.get("application-identifier", "")
+    if not isinstance(identifier, str) or not (identifier == p["bundle_id"] or identifier.endswith("." + p["bundle_id"])) or identifier not in linked.get("keychain-access-groups", []):
+        raise QAError("source needs linked simulator keychain entitlements; use agent-qa build with the reviewed project")
     with SharedLock(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock")):
         root = Path.home() / ".local/share/agent-qa/builds" / name / str(uuid.uuid4())
         root.mkdir(mode=0o700, parents=True)
         target = root / source_app.name
         shutil.copytree(source_app, target, symlinks=True)
-        libraries = [x for x in target.rglob("*") if x.suffix in (".dylib", ".framework")]
-        for library in sorted(libraries, key=lambda x: len(x.parts), reverse=True):
-            command(["/usr/bin/codesign", "--force", "--sign", "-", "--timestamp=none", str(library)], timeout=90)
-        bundles = [x for x in target.rglob("*") if x.is_dir() and x.suffix in (".app", ".appex")] + [target]
-        for index, bundle in enumerate(sorted(bundles, key=lambda x: len(x.parts), reverse=True)):
-            data = plistlib.loads((bundle / "Info.plist").read_bytes())
-            entitlements = qa_entitlements(data["CFBundleIdentifier"], read_entitlements(bundle))
-            entitlement_path = root / ("entitlements-%s.plist" % index)
-            entitlement_path.write_bytes(plistlib.dumps(entitlements))
-            command(["/usr/bin/codesign", "--force", "--sign", "-", "--timestamp=none", "--entitlements", str(entitlement_path), "--generate-entitlement-der", str(bundle)], timeout=90)
+        for path in target.rglob("*"):
+            if path.is_symlink() and not path.resolve().is_relative_to(target):
+                raise QAError("copied simulator bundle contains an external link; original files were preserved")
+        # Xcode signs the host executable and links simulated entitlements
+        # separately. Never put restricted iOS claims into the host signature.
         command(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(target)], timeout=60)
         inventory = devices()
         device = next((d for d in inventory if d["udid"] == p["simulator_id"]), None)
@@ -449,6 +518,42 @@ def prepare_build(config, config_path, name, source_app, reviewed_origin):
         p["prepared_app"] = str(target)
         private_json(Path(config_path).expanduser(), config)
         return {"project": name, "simulator_build_prepared": True, "keychain_entitlements": True, "native_binding_pinned": True}
+
+
+def build_project(config, config_path, name, reviewed_origin):
+    validate_project_name(name)
+    p = config["projects"][name]
+    if reviewed_origin.rstrip("/") != p["server"].rstrip("/"): raise QAError("reviewed source origin differs from the registered server")
+    recipe = p.get("build") or {}
+    project, scheme = recipe.get("project"), recipe.get("scheme")
+    if not project or not scheme or not Path(project).expanduser().is_dir(): raise QAError("private native project/scheme recipe is missing")
+    guard, session = shutil.which("dev-storage-guard"), shutil.which("dev-ios-session")
+    if not guard or not session: raise QAError("native build requires the installed storage guard and simulator session helper")
+    artifact = Path(command([guard, "new-artifact", "agent-qa-" + name]).strip())
+    if not artifact.is_absolute() or not artifact.is_dir(): raise QAError("storage guard did not issue an artifact directory")
+    entitlements = artifact / "SimulatorQA.entitlements"
+    entitlements.write_bytes(plistlib.dumps(qa_entitlements("$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)")))
+    derived = artifact / "DerivedData"
+    args = [session, "run", "--udid", p["simulator_id"], "--timeout", "30", "--", "xcodebuild", "-project", str(Path(project).expanduser()), "-scheme", scheme,
+            "-configuration", recipe.get("configuration", "Debug"), "-sdk", "iphonesimulator", "-destination", "generic/platform=iOS Simulator", "-derivedDataPath", str(derived), "-jobs", "2",
+            "CODE_SIGNING_ALLOWED=YES", "CODE_SIGNING_REQUIRED=NO", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual", "DEVELOPMENT_TEAM=", "ONLY_ACTIVE_ARCH=YES", "CODE_SIGN_ENTITLEMENTS=" + str(entitlements), "build"]
+    env = {**os.environ, "IOS_XCODE_JOBS": "2"}
+    log = artifact / "build.log"
+    fd = os.open(log, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "w") as out:
+        try: result = subprocess.run(args, stdout=out, stderr=subprocess.STDOUT, env=env, timeout=1800)
+        except subprocess.TimeoutExpired: raise QAError("native build timed out; inspect its private artifact before retrying") from None
+    state = Path(config.get("state_dir", Path.home() / ".local/state/agent-qa"))
+    private_json(state / (name + "-build.json"), {"artifact": str(artifact), "exit": result.returncode, "at": time.time()})
+    if result.returncode: raise QAError("native build failed; inspect its private build.log")
+    products = derived / "Build/Products" / (recipe.get("configuration", "Debug") + "-iphonesimulator")
+    matches = []
+    for app in products.glob("*.app"):
+        try: data = plistlib.loads((app / "Info.plist").read_bytes())
+        except (OSError, ValueError): continue
+        if data.get("CFBundleIdentifier") == p["bundle_id"]: matches.append(app)
+    if len(matches) != 1: raise QAError("native build did not produce the registered app")
+    return prepare_build(config, config_path, name, matches[0], reviewed_origin)
 
 
 def verify_native_binding(p, binary):
@@ -470,6 +575,7 @@ def verify_native_binding(p, binary):
 
 
 def open_project(config, name, screen=None, _lock_held=False):
+    validate_project_name(name)
     p = validate_profile(config["projects"][name])
     state_dir = Path(config.get("state_dir", Path.home() / ".local/state/agent-qa"))
     def stage(phase): private_json(state_dir / (name + "-progress.json"), {"project": name, "phase": phase, "at": time.time()})
@@ -595,7 +701,9 @@ def load_config(path):
         raise QAError("private profile configuration is missing or unreadable") from None
     if config.get("schema_version") != 1 or not config.get("projects"):
         raise QAError("unsupported or empty profile configuration")
-    for p in config["projects"].values(): validate_profile(p)
+    for name, p in config["projects"].items():
+        validate_project_name(name)
+        validate_profile(p)
     return config
 
 
@@ -677,6 +785,9 @@ def main(argv=None):
     prep.add_argument("project")
     prep.add_argument("--app", required=True)
     prep.add_argument("--reviewed-origin", required=True)
+    build = commands.add_parser("build")
+    build.add_argument("project")
+    build.add_argument("--reviewed-origin", required=True)
     commands.add_parser("watch").add_argument("--once", action="store_true")
     commands.add_parser("serve")
     for name in ("pause", "resume", "status"): commands.add_parser(name)
@@ -690,6 +801,8 @@ def main(argv=None):
             result = {"status": "configured", "projects": list(config["projects"]), "paused": (state / "paused").exists()}
         elif args.command == "prepare":
             result = prepare_build(config, args.config, args.project, args.app, args.reviewed_origin)
+        elif args.command == "build":
+            result = build_project(config, args.config, args.project, args.reviewed_origin)
         elif args.command in ("open", "check") and config.get("gui_bridge") and os.environ.get("SSH_CONNECTION"):
             result = gui_request(config, args.config, args.command, args.project, getattr(args, "screen", None))
         elif args.command == "serve":
