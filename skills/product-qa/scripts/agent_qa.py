@@ -153,7 +153,10 @@ def check_credentials(p, password, transport=None):
 
 def keychain_password(p):
     ref = p["credential"]
-    result = subprocess.run(["/usr/bin/security", "find-generic-password", "-s", ref["service"], "-a", ref["account"], "-w"], capture_output=True, text=True)
+    try:
+        result = subprocess.run(["/usr/bin/security", "find-generic-password", "-s", ref["service"], "-a", ref["account"], "-w"], capture_output=True, text=True, timeout=20)
+    except subprocess.TimeoutExpired:
+        raise QAError("keychain access is awaiting system approval or is unavailable in this security session") from None
     if result.returncode or not result.stdout:
         raise QAError("dedicated test credential is missing or the keychain is locked")
     return result.stdout.rstrip("\n")
@@ -200,7 +203,11 @@ class UI:
         return bool(selector) and all(str(item.get(keys.get(k, k), "")) == str(v) for k, v in selector.items())
 
     def find(self, selector, items=None):
-        return next((x for x in (items if items is not None else self.tree()) if self.matches(x, selector)), None)
+        matches = [x for x in (items if items is not None else self.tree()) if self.matches(x, selector)]
+        if "type" not in selector:
+            controls = [x for x in matches if x.get("type") in ("Button", "TextField", "SecureTextField", "RadioButton", "Switch", "CheckBox", "Slider")]
+            if controls: return controls[0]
+        return matches[0] if matches else None
 
     def wait(self, selector, timeout=15):
         end = time.monotonic() + timeout
@@ -222,7 +229,12 @@ class UI:
         args = [self.executable, "tap", "--udid", self.device]
         for k, v in selector.items():
             args += ["--" + ("element-type" if k == "type" else k), str(v)]
-        command(args)
+        if "type" not in selector and item.get("type"):
+            args += ["--element-type", item["type"]]
+        try:
+            command(args)
+        except QAError:
+            raise QAError("UI control could not be activated: " + str(selector)) from None
         time.sleep(0.8)
         return True
 
@@ -385,8 +397,10 @@ def verify_native_binding(p, binary):
 def open_project(config, name, screen=None, _lock_held=False):
     p = validate_profile(config["projects"][name])
     state_dir = Path(config.get("state_dir", Path.home() / ".local/state/agent-qa"))
+    def stage(phase): private_json(state_dir / (name + "-progress.json"), {"project": name, "phase": phase, "at": time.time()})
     lock = contextlib.nullcontext() if _lock_held else SharedLock(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock"))
     with lock:
+        stage("selecting_simulator")
         inventory = devices()
         device = next((d for d in inventory if d["udid"] == p["simulator_id"]), None)
         if device is None: raise QAError("registered simulator is unavailable")
@@ -406,16 +420,24 @@ def open_project(config, name, screen=None, _lock_held=False):
         route = p["ui"]
         if not route.get("identity_anchor"):
             raise QAError("profile needs an authenticated account-surface scope")
+        stage("checking_keychain")
         password = keychain_password(p)
+        stage("checking_server_identity")
         proof = check_credentials(p, password)
         env = dict(os.environ)
         for k, v in p.get("launch_env", {}).items(): env["SIMCTL_CHILD_" + k] = str(v)
+        stage("launching_app")
+        if config.get("show_simulator", True):
+            command(["/usr/bin/open", "-a", "Simulator", "--args", "-CurrentDeviceUDID", device["udid"]])
         command(["xcrun", "simctl", "launch", "--terminate-running-process", device["udid"], p["bundle_id"], *p.get("launch_args", [])], env=env)
         ui = UI(device["udid"], config.get("axe", "axe"))
+        stage("opening_account_surface")
         ui.steps(route.get("account_steps", []))
         entered = False
-        email_field = ui.wait(route["email_field"], route.get("login_probe_timeout", 8))
+        account_ready = visible_email(ui.tree(), p["email"], route["identity_anchor"])
+        email_field = None if account_ready else ui.wait(route["email_field"], route.get("login_probe_timeout", 8))
         if email_field is not None:
+            stage("entering_credentials")
             value = str(email_field.get("AXValue") or "")
             if value not in ("", p["email"], route.get("email_placeholder", "Email"), "邮箱"):
                 raise QAError("login form contains another identity; refusing to replace it silently")
@@ -424,8 +446,10 @@ def open_project(config, name, screen=None, _lock_held=False):
             ui.fill(route["password_field"], password, secret=True)
             ui.tap(route["submit"])
             entered = True
+            stage("waiting_for_native_login")
             ui.steps([{"action": "wait_gone", "selector": route["email_field"], "timeout": 65}])
             ui.steps(route.get("after_login_steps", []))
+        stage("verifying_native_account")
         anchor = route.get("identity_anchor")
         if anchor and ui.wait(anchor, 40) is None:
             raise QAError("native authenticated account surface did not appear")
@@ -448,6 +472,7 @@ def open_project(config, name, screen=None, _lock_held=False):
         selected.data[device["udid"]] = name
         private_json(selected.path, selected.data)
         WatchState(state_dir / "watch.json").record(device["udid"], boot_identity(device["udid"]), True)
+        stage("ready")
         return result
 
 

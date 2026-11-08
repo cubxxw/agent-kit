@@ -204,6 +204,15 @@ class ProductQATests(unittest.TestCase):
             self.assertFalse(path.exists())
             self.assertTrue((Path(tmp) / "rejected" / path.name).exists())
 
+    def test_wrapped_swiftui_control_is_disambiguated_by_type(self):
+        items=[{"AXUniqueId":"avatar","type":"Group"},{"AXUniqueId":"avatar","type":"Button","enabled":True}]
+        ui=self.qa.UI("device")
+        self.assertEqual("Button",ui.find({"id":"avatar"},items)["type"])
+        with patch.object(ui,"tree",return_value=items),patch.object(self.qa,"command") as run,patch.object(self.qa.time,"sleep"):
+            ui.tap({"id":"avatar"})
+        self.assertIn("--element-type",run.call_args.args[0])
+        self.assertIn("Button",run.call_args.args[0])
+
 
 if __name__ == "__main__":
     unittest.main()
