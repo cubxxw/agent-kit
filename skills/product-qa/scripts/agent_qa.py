@@ -333,12 +333,17 @@ class WatchState:
         now = time.time() if now is None else now
         previous = self.data.get(device, {})
         if previous.get("boot") != boot: return True
-        return not previous.get("success") and previous.get("attempts", 0) < 3 and now - previous.get("at", 0) >= 300
+        return not previous.get("in_progress") and not previous.get("success") and previous.get("attempts", 0) < 3 and now - previous.get("at", 0) >= 300
+
+    def begin(self, device, boot, now=None):
+        self.record(device, boot, False, now)
+        self.data[device]["in_progress"] = True
+        private_json(self.path, self.data)
 
     def record(self, device, boot, success, now=None):
         old = self.data.get(device, {})
         attempts = old.get("attempts", 0) if old.get("boot") == boot else 0
-        self.data[device] = {"boot": boot, "success": success, "at": time.time() if now is None else now, "attempts": attempts + 1}
+        self.data[device] = {"boot": boot, "success": success, "at": time.time() if now is None else now, "attempts": attempts + (0 if old.get("boot") == boot and old.get("in_progress") else 1)}
         private_json(self.path, self.data)
 
 
@@ -384,6 +389,15 @@ class SharedLock:
             pass
 
 
+def same_device(first, second):
+    return str(first).casefold() == str(second).casefold()
+
+
+def enforce_device_policy(config, inventory, selected):
+    if not config.get("allow_other_booted_devices", False) and any(d["state"] == "Booted" and not same_device(d["udid"], selected) for d in inventory):
+        raise QAError("another simulator is already in use; it was left untouched")
+
+
 def devices():
     return [d for group in json.loads(command(["xcrun", "simctl", "list", "devices", "available", "-j"]))["devices"].values() for d in group]
 
@@ -400,7 +414,7 @@ def installed_apps(device):
 
 
 def boot_identity(device):
-    record = next((d for d in devices() if d["udid"] == device), {})
+    record = next((d for d in devices() if same_device(d["udid"], device)), {})
     if record.get("lastBootedAt"): return record["lastBootedAt"]
     return command(["xcrun", "simctl", "spawn", device, "launchctl", "managerpid"]).strip()
 
@@ -430,14 +444,23 @@ def visible_email(items, email, scope=None):
 
 def native_digest(binary):
     binary = Path(binary)
-    files = sorted(p for p in binary.parent.rglob("*") if p.is_file()) if binary.parent.suffix == ".app" else [binary]
-    digest = hashlib.sha256()
+    root = binary.parent.resolve()
+    files = sorted(binary.parent.rglob("*")) if binary.parent.suffix == ".app" else [binary]
+    digest = hashlib.sha256(b"agent-qa-native-v2\0")
+    def frame(value):
+        digest.update(len(value).to_bytes(8, "big")); digest.update(value)
     for path in files:
-        if not path.resolve().is_relative_to(binary.parent.resolve()):
-            raise QAError("native bundle contains an external file link")
-        digest.update(str(path.relative_to(binary.parent)).encode())
-        with path.open("rb") as source:
-            for chunk in iter(lambda: source.read(1024 * 1024), b""): digest.update(chunk)
+        if not path.resolve().is_relative_to(root):
+            raise QAError("native bundle contains an external link")
+        frame(str(path.relative_to(binary.parent)).encode())
+        if path.is_symlink():
+            digest.update(b"L"); frame(os.readlink(path).encode())
+        elif path.is_dir(): digest.update(b"D")
+        elif path.is_file():
+            digest.update(b"F"); digest.update(path.stat().st_size.to_bytes(8, "big"))
+            with path.open("rb") as source:
+                for chunk in iter(lambda: source.read(1024 * 1024), b""): digest.update(chunk)
+        else: raise QAError("native bundle contains an unsupported entry")
     return digest.hexdigest()
 
 
@@ -536,8 +559,9 @@ def prepare_build(config, config_path, name, source_app, reviewed_origin):
         # separately. Never put restricted iOS claims into the host signature.
         command(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(target)], timeout=60)
         inventory = devices()
-        device = next((d for d in inventory if d["udid"] == p["simulator_id"]), None)
+        device = next((d for d in inventory if same_device(d["udid"], p["simulator_id"])), None)
         if not device: raise QAError("registered simulator is unavailable")
+        enforce_device_policy(config, inventory, device["udid"])
         if device["state"] != "Booted":
             command(["xcrun", "simctl", "boot", device["udid"]])
             command(["xcrun", "simctl", "bootstatus", device["udid"], "-b"], timeout=180)
@@ -616,7 +640,7 @@ def build_project(config, config_path, name, reviewed_origin):
     project, scheme = recipe.get("project"), recipe.get("scheme")
     if not project or not scheme or not Path(project).expanduser().is_dir(): raise QAError("private native project/scheme recipe is missing")
     build_device = config.get("build_simulator_id", p["simulator_id"])
-    if build_device != p["simulator_id"] and any(d["udid"] == p["simulator_id"] and d["state"] == "Booted" for d in devices()):
+    if not same_device(build_device, p["simulator_id"]) and any(same_device(d["udid"], p["simulator_id"]) and d["state"] == "Booted" for d in devices()):
         raise QAError("close the dedicated QA simulator before starting a resource-intensive native build")
     guard, session = find_helper("dev-storage-guard"), find_helper("dev-ios-session")
     if not guard or not session: raise QAError("native build requires the installed storage guard and simulator session helper")
@@ -658,7 +682,7 @@ def close_devices(config):
     closed = []
     for device in selected:
         with SharedLock(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock"), device, config.get("allow_other_simulator_tests", False)):
-            if any(d["udid"] == device and d["state"] == "Booted" for d in devices()):
+            if any(same_device(d["udid"], device) and d["state"] == "Booted" for d in devices()):
                 command(["xcrun", "simctl", "shutdown", device], timeout=120)
                 closed.append(device)
     return {"qa_simulators_closed": closed, "data_preserved": True}
@@ -691,11 +715,9 @@ def open_project(config, name, screen=None, _lock_held=False):
     with lock:
         stage("selecting_simulator")
         inventory = devices()
-        device = next((d for d in inventory if d["udid"] == p["simulator_id"]), None)
+        device = next((d for d in inventory if same_device(d["udid"], p["simulator_id"])), None)
         if device is None: raise QAError("registered simulator is unavailable")
-        foreign = [d for d in inventory if d["state"] == "Booted" and d["udid"] != device["udid"]]
-        if foreign and not config.get("allow_other_booted_devices", False):
-            raise QAError("another simulator is already in use; it was left untouched")
+        enforce_device_policy(config, inventory, device["udid"])
         if device["state"] != "Booted": command(["xcrun", "simctl", "boot", device["udid"]])
         command(["xcrun", "simctl", "bootstatus", device["udid"], "-b"], timeout=180)
         apps = installed_apps(device["udid"])
@@ -749,9 +771,8 @@ def open_project(config, name, screen=None, _lock_held=False):
             time.sleep(0.5)
         ui.steps(route.get("leave_account_steps", []))
         target = screen or p.get("default_screen", "home")
-        if target != "home":
-            if target not in route.get("screens", {}): raise QAError("requested page is not configured")
-            ui.steps(route["screens"][target])
+        if target in route.get("screens", {}): ui.steps(route["screens"][target])
+        elif target != "home": raise QAError("requested page is not configured")
         result = {"project": name, "simulator_id": device["udid"], "bundle_id": p["bundle_id"],
                   "version": app.get("CFBundleShortVersionString"), "build": app.get("CFBundleVersion"),
                   "server_identity_verified": proof["server_identity_verified"], "native_ui_identity_verified": True,
@@ -772,26 +793,26 @@ def watch_once(config):
     results = []
     for device in devices():
         if device["state"] != "Booted": continue
-        choices = [name for name, p in config["projects"].items() if p.get("watch_boot") and p["simulator_id"] == device["udid"]]
+        choices = [name for name, p in config["projects"].items() if p.get("watch_boot") and same_device(p["simulator_id"], device["udid"])]
         if not choices: continue
         try:
             with SharedLock(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock"), device["udid"], config.get("allow_other_simulator_tests", False)):
                 if (state_dir / "paused").exists(): continue
                 selected = WatchState(state_dir / "selected.json").data
                 state = WatchState(state_dir / "watch.json")
-                fresh = next((d for d in devices() if d["udid"] == device["udid"]), {})
+                fresh = next((d for d in devices() if same_device(d["udid"], device["udid"])), {})
                 if fresh.get("state") != "Booted": continue
                 boot = boot_identity(device["udid"])
                 if not state.due(device["udid"], boot): continue
                 name = selected.get(device["udid"], config.get("default_project", choices[0]))
                 if name not in choices: name = choices[0]
+                state.begin(device["udid"], boot)
                 try:
                     result = open_project(config, name, _lock_held=True)
                     results.append(result)
-                except QAError as exc:
-                    if "busy" in str(exc) or "reserved" in str(exc): continue
+                except (QAError, KeyError, TypeError) as exc:
                     state.record(device["udid"], boot, False)
-                    result = {"project": name, "status": "failed", "error": str(exc), "at": time.time()}
+                    result = {"project": name, "status": "failed", "error": str(exc) if isinstance(exc, QAError) else "incomplete registered UI configuration", "at": time.time()}
                     private_json(state_dir / "watch-error.json", result)
                     results.append(result)
         except QAError as exc:
@@ -809,10 +830,34 @@ def load_config(path):
         raise QAError("private profile configuration is missing or unreadable") from None
     if config.get("schema_version") != 1 or not config.get("projects"):
         raise QAError("unsupported or empty profile configuration")
+    if "state_dir" in config:
+        state = Path(config["state_dir"]).expanduser()
+        if not state.is_absolute(): raise QAError("state directory must be absolute")
+        config["state_dir"] = str(state.resolve())
     for name, p in config["projects"].items():
         validate_project_name(name)
         validate_profile(p)
     return config
+
+
+def pause_monitor(config, state):
+    private_json(state / "paused", {"at": time.time()})
+    lock = Path(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock"))
+    deadline = time.monotonic() + 180
+    while True:
+        try: owner = lock.read_text().strip()
+        except OSError: return {"automatic_boot_login": "paused"}
+        if not owner.isdigit(): return {"automatic_boot_login": "paused"}
+        proc = subprocess.run(["/bin/ps", "-p", owner, "-o", "command="], capture_output=True, text=True)
+        if proc.returncode or str(Path(__file__).resolve()) not in proc.stdout or not re.search(r"\bwatch(?:\s|$)", proc.stdout):
+            return {"automatic_boot_login": "paused"}
+        if time.monotonic() >= deadline:
+            raise QAError("future automatic login is paused; the admitted UI operation is still finishing")
+        time.sleep(0.3)
+
+
+def config_digest(config):
+    return hashlib.sha256(json.dumps(config, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
 def gui_request(config, config_path, action, project, screen=None):
@@ -821,7 +866,7 @@ def gui_request(config, config_path, action, project, screen=None):
     path = state / "requests" / (request_id + ".json")
     result_path = state / "results" / (request_id + ".json")
     intent = state / "intents" / path.name
-    private_json(intent, {"id": request_id, "action": action, "project": project, "screen": screen, "created_at": time.time()})
+    private_json(intent, {"id": request_id, "action": action, "project": project, "screen": screen, "created_at": time.time(), "config_digest": config_digest(config)})
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.replace(intent, path)
     try:
@@ -862,10 +907,19 @@ def serve_requests(config):
         if not isinstance(item, dict) or not isinstance(item.get("id"), str) or not re.fullmatch(r"[0-9a-f-]{36}", item["id"]) or path.stem != item["id"]:
             reject(path)
             continue
+        completed = state / "completed" / path.name
+        if completed.exists():
+            if not (state / "results" / path.name).exists(): private_json(state / "results" / path.name, json.loads(completed.read_text()))
+            path.unlink()
+            continue
+        admitted = state / "admitted" / path.name
         try:
+            if admitted.exists(): raise QAError("GUI request was interrupted; inspect native state before opening again")
+            if item.get("config_digest") != config_digest(config): raise QAError("GUI worker configuration differs from the client request")
             if time.time() - item.get("created_at", 0) > 300: raise QAError("GUI test request expired")
             project = item["project"]
             if project not in config["projects"]: raise QAError("unknown registered project")
+            private_json(admitted, {"at": time.time()})
             if item["action"] == "open": result = open_project(config, project, item.get("screen"))
             elif item["action"] == "check":
                 p = config["projects"][project]
@@ -876,6 +930,7 @@ def serve_requests(config):
             response = {"ok": False, "error": str(exc)}
         except Exception:
             response = {"ok": False, "error": "GUI test job failed; no sensitive tool output was retained"}
+        private_json(completed, response)
         private_json(state / "results" / path.name, response)
         path.unlink()
 
@@ -932,8 +987,7 @@ def main(argv=None):
             result = watch_once(config)
             if not result: return 0
         elif args.command == "pause":
-            private_json(state / "paused", {"at": time.time()})
-            result = {"automatic_boot_login": "paused"}
+            result = pause_monitor(config, state)
         elif args.command == "resume":
             (state / "paused").unlink(missing_ok=True)
             result = {"automatic_boot_login": "enabled"}

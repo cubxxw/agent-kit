@@ -22,6 +22,7 @@ def install(home, watch=False, no_load=False, gui=False):
             raise QAError("existing agent-qa command belongs to another installation")
     elif command.exists():
         raise QAError("existing agent-qa command was preserved")
+    config = {}
     if watch or gui:
         config_path = home / ".config/agent-qa/projects.json"
         config = load_config(config_path)
@@ -69,7 +70,7 @@ def install(home, watch=False, no_load=False, gui=False):
                 subprocess.run(["launchctl", "bootout", domain + "/" + label], capture_output=True)
                 result = subprocess.run(["launchctl", "bootstrap", domain, str(target)], capture_output=True)
                 if result.returncode: raise QAError("launch agent was written but GUI activation failed")
-    return {"command_installed": True, "automatic_boot_login": watch, "gui_request_bridge": gui, "launch_agent_loaded": (watch or gui) and not no_load}
+    return {"command_installed": True, "automatic_boot_login": watch, "gui_request_bridge": bool(gui or config.get("gui_bridge")), "launch_agent_loaded": (watch or gui) and not no_load}
 
 
 def main():

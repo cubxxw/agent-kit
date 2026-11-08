@@ -99,3 +99,17 @@ visible; the monitor retries at most three times per boot, five minutes apart.
 The launchd UI jobs use the app resource class (`ProcessType: Interactive`):
 they drive visible native UI, while Background throttling can starve Simulator
 and keychain requests on a loaded shared Mac. They do not run native builds.
+
+Native fingerprints use version 2, with explicit entry types, path/content
+boundaries and directory-link targets. After upgrading from the earlier
+format, revalidate and repin each reviewed installed build before opening it.
+GUI requests bind to the normalized private configuration. Admission and
+completion records prevent a worker restart from replaying an old open;
+inspect interrupted native state and issue a new foreground request instead.
+An interrupted boot attempt also requires a foreground open; recorded failures
+retain bounded retries. `pause` waits for an admitted automatic UI operation
+before confirming that automatic login is paused.
+
+For a fresh Agent Kit machine, bootstrap its `base` management profile first.
+On existing workstations, preserve the management skill's current owner and
+install only `qa` for this capability.

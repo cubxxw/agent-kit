@@ -41,7 +41,9 @@ It runs once per boot and reopens the last selected registered project, or
 the configured default. It shares the machine-wide simulator lock, skips active
 builds, leaves other devices alone and bounds failure retries. Use
 `agent-qa pause` for intentional sign-out tests or competing manual sessions;
-`agent-qa resume` restores monitoring. The foreground `open` command remains
+`agent-qa resume` restores monitoring. Pause waits for an admitted automatic
+operation to finish; an interrupted boot or GUI request is not replayed. Use
+a fresh foreground open after inspecting that app state. The foreground `open` command remains
 available while automatic monitoring is paused.
 
 Use the registered dedicated QA simulator so unrelated builds cannot replace

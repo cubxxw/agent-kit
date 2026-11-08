@@ -96,6 +96,71 @@ class ProductQATests(unittest.TestCase):
         self.assertEqual("transient-secret", commands[0][1]["input"])
         self.assertNotIn("transient-secret", str(caught.exception))
 
+    def test_interrupted_boot_is_not_replayed_but_recorded_failure_can_retry(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"watch.json";state=self.qa.WatchState(path)
+            state.begin("device","boot",now=100)
+            self.assertFalse(self.qa.WatchState(path).due("device","boot",now=1000))
+            state.record("device","boot",False,now=200)
+            self.assertTrue(self.qa.WatchState(path).due("device","boot",now=600))
+            self.assertEqual(1,state.data["device"]["attempts"])
+
+    def test_native_fingerprint_frames_paths_and_file_contents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app=Path(tmp)/"Example.app";app.mkdir();binary=app/"Example";binary.write_bytes(b"binary")
+            (app/"a").write_bytes(b"bc");before=self.qa.native_digest(binary)
+            (app/"a").unlink();(app/"ab").write_bytes(b"c")
+            self.assertNotEqual(before,self.qa.native_digest(binary))
+
+    def test_native_fingerprint_detects_repointed_directory_links(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app=Path(tmp)/"Example.app";app.mkdir();binary=app/"Example";binary.write_bytes(b"binary")
+            for name in ("one","two"):(app/name).mkdir();(app/name/"config").write_text(name)
+            link=app/"active";link.symlink_to("one",target_is_directory=True);before=self.qa.native_digest(binary)
+            link.unlink();link.symlink_to("two",target_is_directory=True)
+            self.assertNotEqual(before,self.qa.native_digest(binary))
+            link.unlink();link.symlink_to(Path(tmp),target_is_directory=True)
+            with self.assertRaises(self.qa.QAError):self.qa.native_digest(binary)
+
+    def test_device_identity_is_case_insensitive_and_foreign_boot_policy_applies(self):
+        selected=profile()["simulator_id"]
+        self.assertTrue(self.qa.same_device(selected,selected.upper()))
+        inventory=[{"udid":selected.upper(),"state":"Booted"},{"udid":"22222222-2222-4222-8222-222222222222","state":"Booted"}]
+        with self.assertRaises(self.qa.QAError):self.qa.enforce_device_policy({},inventory,selected)
+        self.qa.enforce_device_policy({"allow_other_booted_devices":True},inventory,selected)
+
+    def test_pause_waits_for_admitted_monitor_but_keeps_foreground_entry(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);lock=root/"lock";lock.write_text("123")
+            running=Mock(returncode=0,stdout=str(SCRIPT.resolve())+" watch --once")
+            with patch.object(self.qa.subprocess,"run",side_effect=[running,Mock(returncode=1,stdout="")]),patch.object(self.qa.time,"sleep") as sleep:
+                self.qa.pause_monitor({"lock_file":str(lock)},root)
+            sleep.assert_called_once();self.assertTrue((root/"paused").exists())
+            with patch.object(self.qa.subprocess,"run",return_value=Mock(returncode=0,stdout=str(SCRIPT.resolve())+" open example")),patch.object(self.qa.time,"sleep") as sleep:
+                self.qa.pause_monitor({"lock_file":str(lock)},root)
+            sleep.assert_not_called()
+
+    def test_relative_state_directory_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"config.json";self.qa.private_json(path,{"schema_version":1,"state_dir":"relative","projects":{"example":profile()}})
+            with self.assertRaises(self.qa.QAError):self.qa.load_config(path)
+
+    def test_gui_request_binding_rejects_an_alternate_client_configuration(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config={"state_dir":tmp,"projects":{"example":profile()}};rid=str(self.qa.uuid.uuid4());p=Path(tmp)/"requests"/(rid+".json")
+            self.qa.private_json(p,{"id":rid,"action":"open","project":"example","created_at":self.qa.time.time(),"config_digest":"foreign"})
+            with patch.object(self.qa,"open_project") as opened:self.qa.serve_requests(config)
+            opened.assert_not_called();self.assertFalse(json.loads((Path(tmp)/"results"/p.name).read_text())["ok"])
+
+    def test_gui_completed_request_is_not_replayed_after_client_consumes_result(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config={"state_dir":tmp,"projects":{"example":profile()}};rid=str(self.qa.uuid.uuid4());p=Path(tmp)/"requests"/(rid+".json");item={"id":rid,"action":"open","project":"example","created_at":self.qa.time.time(),"config_digest":self.qa.config_digest(config)}
+            self.qa.private_json(p,item)
+            with patch.object(self.qa,"open_project",return_value={"project":"example"}) as opened:self.qa.serve_requests(config)
+            opened.assert_called_once();(Path(tmp)/"results"/p.name).unlink();self.qa.private_json(p,item)
+            with patch.object(self.qa,"open_project") as opened:self.qa.serve_requests(config)
+            opened.assert_not_called();self.assertFalse(p.exists())
+
     def test_watch_state_survives_restarts_and_requires_new_boot(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "watch.json"
