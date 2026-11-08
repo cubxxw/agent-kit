@@ -844,12 +844,15 @@ def pause_monitor(config, state):
     private_json(state / "paused", {"at": time.time()})
     lock = Path(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock"))
     deadline = time.monotonic() + 180
+    sources = [str(Path(__file__).resolve())]
+    launcher = Path.home() / ".local/bin/agent-qa"
+    if launcher.is_symlink() and launcher.resolve() == Path(__file__).resolve(): sources.append(str(launcher))
     while True:
         try: owner = lock.read_text().strip()
         except OSError: return {"automatic_boot_login": "paused"}
         if not owner.isdigit(): return {"automatic_boot_login": "paused"}
         proc = subprocess.run(["/bin/ps", "-p", owner, "-o", "command="], capture_output=True, text=True)
-        if proc.returncode or str(Path(__file__).resolve()) not in proc.stdout or not re.search(r"\bwatch(?:\s|$)", proc.stdout):
+        if proc.returncode or not any(source in proc.stdout for source in sources) or not re.search(r"\bwatch(?:\s|$)", proc.stdout):
             return {"automatic_boot_login": "paused"}
         if time.monotonic() >= deadline:
             raise QAError("future automatic login is paused; the admitted UI operation is still finishing")

@@ -140,6 +140,14 @@ class ProductQATests(unittest.TestCase):
                 self.qa.pause_monitor({"lock_file":str(lock)},root)
             sleep.assert_not_called()
 
+    def test_pause_waits_for_watcher_started_through_managed_launcher(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);lock=root/"lock";lock.write_text("123");launcher=root/".local/bin/agent-qa";launcher.parent.mkdir(parents=True);launcher.symlink_to(SCRIPT)
+            running=Mock(returncode=0,stdout=str(launcher)+" watch --once")
+            with patch.object(self.qa.Path,"home",return_value=root),patch.object(self.qa.subprocess,"run",side_effect=[running,Mock(returncode=1,stdout="")]),patch.object(self.qa.time,"sleep") as sleep:
+                self.qa.pause_monitor({"lock_file":str(lock)},root)
+            sleep.assert_called_once()
+
     def test_relative_state_directory_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             path=Path(tmp)/"config.json";self.qa.private_json(path,{"schema_version":1,"state_dir":"relative","projects":{"example":profile()}})
