@@ -62,7 +62,8 @@
       "description": "Every accepted skill, including optional writing; choose this explicitly.",
       "extends": [
         "full-stack",
-        "writing"
+        "writing",
+        "qa"
       ],
       "skills": []
     },
@@ -81,6 +82,12 @@
       "skills": [
         "excalidraw-architecture",
         "archify"
+      ]
+    },
+    "qa": {
+      "description": "Opt-in native simulator test-account entry on configured Macs.",
+      "skills": [
+        "product-qa"
       ]
     }
   },
@@ -202,6 +209,14 @@
     {
       "name": "threads-oral-notes",
       "path": "skills/threads-oral-notes",
+      "license": "MIT",
+      "source": {
+        "type": "first-party"
+      }
+    },
+    {
+      "name": "product-qa",
+      "path": "skills/product-qa",
       "license": "MIT",
       "source": {
         "type": "first-party"
