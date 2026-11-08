@@ -6,13 +6,17 @@ registered device/build and never creates or erases devices. Initial setup can
 register a dedicated QA simulator so other projects cannot replace its apps.
 
 Each private profile can provide `build: {project, scheme, configuration,
-entitlements, generate_spec, prepare_commands}`; the optional entitlement path preserves the product's existing
+entitlements, generate_spec, prepare_commands, package_cache}`; the optional entitlement path preserves the product's existing
 capabilities while adding the required linked keychain identity.
 `agent-qa build <project> --reviewed-origin <origin>` obtains a registered storage
 artifact and runs Xcode inside the existing simulator session helper, using two
 jobs and standard Simulator entitlement handling without an Apple publishing
 identity. Source copies and logs remain private. The build must produce the
 registered bundle identifier.
+An optional verified `package_cache` selects system Git and the project’s committed
+resolved versions, skips updates, and reuses its binary artifact cache. Verify
+any task-scoped official mirror environment against those exact pins first;
+never change global Git routing or substitute package versions.
 Canonical resource commands (explicit argv lists) and XcodeGen run inside the
 owned build session; the existing generated project is backed up first. Build
 cancellation asks the reservation owner to clean up rather than killing that

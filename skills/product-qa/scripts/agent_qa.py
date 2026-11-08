@@ -355,8 +355,9 @@ def active_builds(selected_device=None, allow_other_simulator_tests=False):
         metadata = {"-version", "-list", "-showsdks", "-showdestinations", "-showBuildSettings", "-find-executable", "-find-library"}
         if not mutations.intersection(words) and metadata.intersection(words): continue
         if allow_other_simulator_tests and selected_device and mutations.intersection(words) == {"test-without-building"}:
-            targets = re.findall(r"\bid=([A-Fa-f0-9-]{36})", proc.stdout)
-            if targets and all(x.lower() != selected_device.lower() for x in targets): continue
+            destinations = re.findall(r"(?:^|\s)-destination(?:\s+|=)(.+?)(?=\s+-|\s+test-without-building(?:\s|$)|$)", proc.stdout)
+            targets = [re.fullmatch(r"[\"']?(?:platform=iOS Simulator,)?id=([A-Fa-f0-9-]{36})[\"']?", x.strip()) for x in destinations]
+            if targets and all(x and x[1].lower() != selected_device.lower() for x in targets): continue
         return True
     return False
 
@@ -409,20 +410,22 @@ def visible_email(items, email, scope=None):
     anchors = [x["_path"] for x in items if UI.matches(x, scope)]
     if not anchors: return False
     by_path = {x.get("_path"): x for x in items}
+    local_candidates, direct_candidates = [], []
     for item in items:
         parents = item.get("_parents", [])
         if item.get("type") != "StaticText": continue
-        direct_scope = any(x in parents for x in anchors)
-        authenticated_button_scope = any(
-            by_path[a].get("type") == "Button" and any(
-                x in parents and by_path.get(x, {}).get("type") in ("Group", "ScrollView", "Table", "Sheet", "Form")
-                for x in by_path[a].get("_parents", [])
-            ) for a in anchors
-        )
-        if not direct_scope and not authenticated_button_scope: continue
         if any("field" in str(by_path.get(x, {}).get("type", "")).lower() or by_path.get(x, {}).get("type") == "Button" for x in parents): continue
-        if str(item.get("AXLabel") or "").strip().casefold() == email.casefold(): return True
-    return False
+        label = str(item.get("AXLabel") or "").strip().casefold()
+        if not re.fullmatch(r"[^\s@]+@[^\s@]+", label): continue
+        if any(a in parents for a in anchors): direct_candidates.append(label)
+        scores = [depth for a in anchors if by_path[a].get("type") == "Button"
+                  for depth, ancestor in enumerate(by_path[a].get("_parents", []))
+                  if ancestor in parents and by_path.get(ancestor, {}).get("type") in ("Group", "ScrollView", "Table", "Sheet", "Form")]
+        if scores: local_candidates.append((max(scores), label))
+    if direct_candidates: return set(direct_candidates) == {email.casefold()}
+    if not local_candidates: return False
+    nearest = max(score for score, _ in local_candidates)
+    return {label for score, label in local_candidates if score == nearest} == {email.casefold()}
 
 
 def native_digest(binary):
@@ -598,6 +601,10 @@ def perform_native_build(config, name, artifact):
     args = ["xcodebuild", "-project", str(Path(recipe["project"]).expanduser()), "-scheme", recipe["scheme"],
             "-configuration", recipe.get("configuration", "Debug"), "-destination", "generic/platform=iOS Simulator", "-derivedDataPath", str(artifact / "DerivedData"), "-jobs", "2",
             "CODE_SIGNING_ALLOWED=YES", "CODE_SIGNING_REQUIRED=NO", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual", "DEVELOPMENT_TEAM=", "ONLY_ACTIVE_ARCH=YES", "ARCHS=" + recipe.get("architecture", platform.machine()), "CODE_SIGN_ENTITLEMENTS=" + str(artifact / "SimulatorQA.entitlements"), "build"]
+    if recipe.get("package_cache"):
+        args[1:1] = ["-scmProvider", "system", "-onlyUsePackageVersionsFromResolvedFile",
+                     "-disableAutomaticPackageResolution", "-skipPackageUpdates",
+                     "-packageCachePath", str(Path(recipe["package_cache"]).expanduser())]
     return subprocess.call(args)
 
 

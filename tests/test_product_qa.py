@@ -180,6 +180,19 @@ class ProductQATests(unittest.TestCase):
         items[2]["_parents"] = [4]
         self.assertFalse(self.qa.visible_email(items, "qa@example.invalid", {"label": "Sign out", "type": "Button"}))
 
+    def test_foreign_account_email_outranks_expected_email_in_background_content(self):
+        items=[{"type":"Group","_path":1,"_parents":[]},{"type":"Group","_path":2,"_parents":[1]},
+               {"type":"Button","AXLabel":"Account action","_path":3,"_parents":[1,2]},
+               {"type":"StaticText","AXLabel":"private@example.invalid","_path":4,"_parents":[1,2]},
+               {"type":"StaticText","AXLabel":"qa@example.invalid","_path":5,"_parents":[1]}]
+        self.assertFalse(self.qa.visible_email(items,"qa@example.invalid",{"label":"Account action","type":"Button"}))
+
+    def test_account_container_with_conflicting_static_emails_is_rejected(self):
+        items=[{"type":"Group","AXUniqueId":"account","_path":1,"_parents":[]},
+               {"type":"StaticText","AXLabel":"private@example.invalid","_path":2,"_parents":[1]},
+               {"type":"StaticText","AXLabel":"qa@example.invalid","_path":3,"_parents":[1]}]
+        self.assertFalse(self.qa.visible_email(items,"qa@example.invalid",{"id":"account"}))
+
     def test_gui_worker_only_accepts_registered_actions_and_cleans_its_request(self):
         with tempfile.TemporaryDirectory() as tmp:
             request_id = "a7e89431-ab51-43fe-9c68-c03b2d2a184d"
@@ -246,6 +259,19 @@ class ProductQATests(unittest.TestCase):
             self.assertEqual("original project",(artifact/"original-project.xcodeproj/project.pbxproj").read_text())
             self.assertEqual("regenerated project",(project/"project.pbxproj").read_text())
 
+    def test_registered_package_cache_uses_only_committed_versions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            artifact=Path(tmp);private=self.qa.private_json
+            private(artifact/"build-intent.json",{"project":"example","bundle_id":profile()["bundle_id"],"source_project":"/source/Example.xcodeproj"})
+            config={"projects":{"example":{**profile(),"build":{"project":"/source/Example.xcodeproj","scheme":"Example","package_cache":"/verified/packages"}}}}
+            with patch.object(self.qa,"find_helper",return_value="session"),patch.object(self.qa.subprocess,"run",return_value=Mock(returncode=0)),patch.object(self.qa,"generate_project"),patch.object(self.qa.subprocess,"call",return_value=0) as call:
+                self.qa.perform_native_build(config,"example",artifact)
+            args=call.call_args.args[0]
+            self.assertIn("-onlyUsePackageVersionsFromResolvedFile",args)
+            self.assertIn("-skipPackageUpdates",args)
+            self.assertEqual("system",args[args.index("-scmProvider")+1])
+            self.assertEqual("/verified/packages",args[args.index("-packageCachePath")+1])
+
     def test_build_timeout_allows_the_owned_session_to_cleanup(self):
         process=Mock();process.wait.side_effect=[self.qa.subprocess.TimeoutExpired(["session"],1),0]
         with patch.object(self.qa.subprocess,"Popen",return_value=process):
@@ -300,6 +326,11 @@ class ProductQATests(unittest.TestCase):
         with patch.object(self.qa.subprocess,"run",side_effect=[Result("123\n"),Result(same)]):
             self.assertTrue(self.qa.active_builds(profile()["simulator_id"],True))
         with patch.object(self.qa.subprocess,"run",side_effect=[Result("123\n"),Result(other.replace("test-without-building","build"))]):
+            self.assertTrue(self.qa.active_builds(profile()["simulator_id"],True))
+
+    def test_other_device_opt_in_rejects_a_second_ambiguous_destination(self):
+        other="S xcodebuild test-without-building -destination id=22222222-2222-4222-8222-222222222222 -destination platform=iOS Simulator,name=Agent QA"
+        with patch.object(self.qa.subprocess,"run",side_effect=[Mock(returncode=0,stdout="123\n"),Mock(returncode=0,stdout=other)]):
             self.assertTrue(self.qa.active_builds(profile()["simulator_id"],True))
 
     def test_close_only_shuts_down_registered_qa_devices(self):
