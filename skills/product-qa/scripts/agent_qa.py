@@ -540,6 +540,10 @@ def find_helper(name):
 
 
 def generate_project(recipe, artifact):
+    for args in recipe.get("prepare_commands", []):
+        if not isinstance(args, list) or not args or not all(isinstance(x, str) for x in args):
+            raise QAError("native resource preparation must use explicit argument lists")
+        command(args, timeout=120)
     if not recipe.get("generate_spec"): return
     generator = find_helper("xcodegen")
     spec = Path(recipe["generate_spec"]).expanduser()
