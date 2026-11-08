@@ -63,7 +63,8 @@
       "extends": [
         "full-stack",
         "writing",
-        "video"
+        "video",
+        "qa"
       ],
       "skills": []
     },
@@ -93,6 +94,12 @@
         "hyperframes-cli",
         "hyperframes-registry",
         "media-use"
+      ]
+    },
+    "qa": {
+      "description": "Opt-in native simulator test-account entry on configured Macs.",
+      "skills": [
+        "product-qa"
       ]
     }
   },
@@ -301,6 +308,14 @@
         "ref": "838f8782c4a96913d1627cd344be8431e7c44019",
         "tree_sha": "f35c4439651d42dc9d299a8056767b0dac4ad597",
         "license_path": "LICENSE"
+      }
+    },
+    {
+      "name": "product-qa",
+      "path": "skills/product-qa",
+      "license": "MIT",
+      "source": {
+        "type": "first-party"
       }
     }
   ]

@@ -1,0 +1,61 @@
+---
+name: product-qa
+description: Open registered native iOS test apps in Simulator with their designated test account, reuse sessions, recover real password login and verify account identity. Use for simulator startup or account-backed UI testing on a configured workstation or remote Mac. Does not publish builds or provision unrelated accounts.
+---
+
+# Product QA
+
+Use `agent-qa doctor`, then `agent-qa open <project>` for a configured native
+app. The private machine registry lives at `$HOME/.config/agent-qa/projects.json`.
+Do not print it: it contains private server and identity configuration. The
+password is referenced by OS keychain service/account and is read at runtime.
+
+For a new simulator build, review its actual backend selection. With a private
+project/scheme recipe, `agent-qa build <project> --reviewed-origin <origin>`
+uses Xcode's standard signing and linked Simulator entitlements. To reuse a
+properly built app, use `agent-qa prepare <project> --app <simulator.app>
+--reviewed-origin <origin>`. Preparation validates the linked keychain identity,
+preserves Xcode's signature, installs a private copy and pins the app tree.
+Missing Simulator entitlements can allow password authentication but prevent
+session storage. Do not put simulated iOS claims into the macOS host signature
+or use plaintext session storage. Physical-device builds and publishing are
+excluded from these commands.
+
+`agent-qa open` checks the password against the pinned server, confirms its
+canonical account UUID/email, revokes only that temporary verification session,
+and launches the registered installed build. It uses the real login UI when
+needed and verifies the native account page. Keep that app session for further
+testing. `--screen <configured-name>` navigates after identity proof. `check`
+proves credentials only, not native UI acceptance. `status` reports sanitized
+receipts; do not substitute an old receipt for a fresh result.
+
+Run data operations only after both server and native identity checks pass.
+The user's current authorization controls whether test data can be changed.
+Never use an unresolved or private account as a fallback. Do not copy production
+data into examples, logs or test fixtures. A fixture-only app is not a live-login
+substitute. Report a rejected credential, missing build or unavailable backend
+truthfully rather than resetting accounts or replacing builds implicitly.
+
+Registered boot monitoring is opt-in through `scripts/install.py --watch`.
+It runs once per boot and reopens the last selected registered project, or
+the configured default. It shares the machine-wide simulator lock, skips active
+builds, leaves other devices alone and bounds failure retries. Use
+`agent-qa pause` for intentional sign-out tests or competing manual sessions;
+`agent-qa resume` restores monitoring. Pause waits for an admitted automatic
+operation to finish; an interrupted boot or GUI request is not replayed. Use
+a fresh foreground open after inspecting that app state. The foreground `open` command remains
+available while automatic monitoring is paused.
+
+Use the registered dedicated QA simulator so unrelated builds cannot replace
+its apps. `agent-qa close` shuts down only registered QA devices and preserves
+their data. Before a heavy build, close QA first; `build_simulator_id` may bind
+the build session to the machine's ordinary shared primary device. Preparation
+and `open` return to the dedicated QA device afterward.
+
+For machine setup, use [the configuration contract](references/configuration.md).
+Install only this skill with Agent Kit's `qa` profile. Machine-local profiles,
+runtime receipts and AXe binaries remain outside this public repository.
+
+Acceptance means fresh real UI login, warm reuse, relaunch and an observed boot
+monitor run on each requested host. List missing stages separately. This skill
+does not authorize a TestFlight upload, release or additional model work.
