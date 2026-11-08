@@ -62,7 +62,8 @@
       "description": "Every accepted skill, including optional writing; choose this explicitly.",
       "extends": [
         "full-stack",
-        "writing"
+        "writing",
+        "video"
       ],
       "skills": []
     },
@@ -81,6 +82,17 @@
       "skills": [
         "excalidraw-architecture",
         "archify"
+      ]
+    },
+    "video": {
+      "description": "Optional YouTube scripting and the four HyperFrames core skills; leaves existing management skills with their current owner.",
+      "skills": [
+        "youtube-script",
+        "youtube-script-writer",
+        "hyperframes",
+        "hyperframes-cli",
+        "hyperframes-registry",
+        "media-use"
       ]
     }
   },
@@ -205,6 +217,90 @@
       "license": "MIT",
       "source": {
         "type": "first-party"
+      }
+    },
+    {
+      "name": "youtube-script",
+      "path": "skills/youtube-script",
+      "license": "MIT",
+      "source": {
+        "type": "vendored",
+        "repository": "mohitagw15856/pm-claude-skills",
+        "path": "skills/youtube-script",
+        "track": "main",
+        "ref": "4391fb006db13fe898f40a897bc369337a64e4e5",
+        "tree_sha": "8736eaf8b11163ff0f5654e86237a4b2fafe480c",
+        "license_path": "LICENSE"
+      }
+    },
+    {
+      "name": "youtube-script-writer",
+      "path": "skills/youtube-script-writer",
+      "license": "MIT",
+      "source": {
+        "type": "vendored",
+        "repository": "mohitagw15856/pm-claude-skills",
+        "path": "skills/youtube-script-writer",
+        "track": "main",
+        "ref": "4391fb006db13fe898f40a897bc369337a64e4e5",
+        "tree_sha": "d465cfb3740572272ae553d87998309d3c1757b6",
+        "license_path": "LICENSE"
+      }
+    },
+    {
+      "name": "hyperframes",
+      "path": "skills/hyperframes",
+      "license": "Apache-2.0",
+      "source": {
+        "type": "vendored",
+        "repository": "heygen-com/hyperframes",
+        "path": "skills/hyperframes",
+        "track": "main",
+        "ref": "838f8782c4a96913d1627cd344be8431e7c44019",
+        "tree_sha": "681ef849ee36d0eafd7bde01fbdab3400dc5a0fe",
+        "license_path": "LICENSE"
+      }
+    },
+    {
+      "name": "hyperframes-cli",
+      "path": "skills/hyperframes-cli",
+      "license": "Apache-2.0",
+      "source": {
+        "type": "vendored",
+        "repository": "heygen-com/hyperframes",
+        "path": "skills/hyperframes-cli",
+        "track": "main",
+        "ref": "838f8782c4a96913d1627cd344be8431e7c44019",
+        "tree_sha": "f81205cdb9d7437b87abb5f2f8936504dfc10b78",
+        "license_path": "LICENSE"
+      }
+    },
+    {
+      "name": "hyperframes-registry",
+      "path": "skills/hyperframes-registry",
+      "license": "Apache-2.0",
+      "source": {
+        "type": "vendored",
+        "repository": "heygen-com/hyperframes",
+        "path": "skills/hyperframes-registry",
+        "track": "main",
+        "ref": "838f8782c4a96913d1627cd344be8431e7c44019",
+        "tree_sha": "ab3da2b9e92cbdab9d591edca5c118a54b05d657",
+        "license_path": "LICENSE"
+      }
+    },
+    {
+      "name": "media-use",
+      "path": "skills/media-use",
+      "license": "Apache-2.0",
+      "source": {
+        "type": "vendored",
+        "repository": "heygen-com/hyperframes",
+        "path": "skills/media-use",
+        "track": "main",
+        "ref": "838f8782c4a96913d1627cd344be8431e7c44019",
+        "tree_sha": "f35c4439651d42dc9d299a8056767b0dac4ad597",
+        "license_path": "LICENSE"
       }
     }
   ]

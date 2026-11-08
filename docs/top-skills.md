@@ -42,6 +42,12 @@ multi-step product UI.
 
 ## Official and product-owned sources
 
+The optional [`video` profile](video-tools.md) adopts the four official
+HyperFrames core skills at a reviewed commit, together with PM Skills'
+`youtube-script` and `youtube-script-writer`. `top` includes this optional
+profile; engineering profiles stay unchanged. See `catalog.json` for exact
+commit and subtree pins and `THIRD_PARTY_NOTICES.md` for licenses.
+
 Prefer these when the task is already inside the source owner’s domain.
 “Official” reduces provenance uncertainty; it does not waive per-skill code,
 license, permission, or secret review.

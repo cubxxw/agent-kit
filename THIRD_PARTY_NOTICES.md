@@ -62,3 +62,25 @@ The complete upstream license is retained at
 
 Archify retains attribution to tt-a1i and the original Cocoon AI
 `architecture-diagram-generator` project in both license files.
+
+## PM Skills YouTube scripting
+
+- Source: <https://github.com/mohitagw15856/pm-claude-skills>
+- Pinned commit: `4391fb006db13fe898f40a897bc369337a64e4e5`
+- Local paths: `skills/youtube-script`, `skills/youtube-script-writer`
+- License: MIT
+- Changes: upstream skills preserved byte-for-byte; the repository-root license
+  is copied to `LICENSE.txt` in each distributed skill. The legacy skill's
+  deprecation metadata and attribution are preserved.
+
+## HyperFrames core skills
+
+- Source: <https://github.com/heygen-com/hyperframes>
+- Pinned commit: `838f8782c4a96913d1627cd344be8431e7c44019`
+- Local paths: `skills/hyperframes`, `skills/hyperframes-cli`,
+  `skills/hyperframes-registry`, `skills/media-use`
+- License: Apache License 2.0
+- Changes: the repository-root license is copied to `LICENSE.txt` in each
+  distributed skill. One synthetic path in `media-use`'s `python.test.mjs` uses
+  the public placeholder `/home/example` to satisfy the public-boundary scan;
+  runtime code and all other upstream files are preserved byte-for-byte.

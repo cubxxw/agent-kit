@@ -1,5 +1,28 @@
 # Skill selection ledger
 
+## 2026-10-29: optional YouTube and HyperFrames toolchain
+
+- Explicitly requested global YouTube scripting and HyperFrames support for
+  local Codex and Claude Code. Adopt only the two related YouTube skills and
+  the four official HyperFrames core skills, in an optional `video` profile.
+- Keep `youtube-script` for compatibility and preserve its upstream deprecation
+  metadata. Prefer its successor `youtube-script-writer` for new work.
+- Pin PM Skills to `4391fb006db13fe898f40a897bc369337a64e4e5` (MIT), and
+  HyperFrames to `838f8782c4a96913d1627cd344be8431e7c44019` (Apache-2.0).
+  Individual subtree SHAs and repository license paths are in the catalog.
+- Skills do not run scripts on discovery. Explicit media generation can use
+  configured providers, send telemetry, install optional audio dependencies,
+  and create local background jobs. Verify the local renderer with telemetry
+  disabled and no provider calls. Keep vendor instructions unchanged.
+- Independent review covered all 75 code files (27 tests) and all six skill
+  entrypoints, with no blocking P0/P1. One synthetic test-home path was changed
+  to the documented public placeholder; runtime sources are unchanged.
+- Keep Figma, slideshows, and Remotion migration on demand. Existing
+  host-provided Figma skills already cover unrelated design work.
+- The CLI is installed separately from the skill catalog. Local binary and
+  rendering evidence belongs in the installation receipt; repository tests
+  alone do not establish that either host discovered a skill or rendered video.
+
 This ledger records why the active catalog stays small. Entries are dated;
 an adoption decision and its evidence do not imply every downstream result
 has been validated.
