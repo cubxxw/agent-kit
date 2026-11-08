@@ -196,6 +196,14 @@ class ProductQATests(unittest.TestCase):
             self.assertFalse(path.exists())
             self.assertTrue((Path(tmp) / "rejected" / path.name).exists())
 
+    def test_gui_worker_drains_unexpected_queue_entries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "requests" / "interrupted.json.123.tmp"
+            path.parent.mkdir(); path.write_text("partial write"); path.chmod(0o600)
+            self.qa.serve_requests({"state_dir": tmp, "projects": {"example": profile()}})
+            self.assertFalse(path.exists())
+            self.assertTrue((Path(tmp) / "rejected" / path.name).exists())
+
 
 if __name__ == "__main__":
     unittest.main()

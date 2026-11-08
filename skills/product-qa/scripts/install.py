@@ -52,14 +52,14 @@ def install(home, watch=False, no_load=False, gui=False):
             plist.chmod(0o600)
             agents.append((plist, data["Label"]))
         if gui or config.get("gui_bridge"):
-            queue = log_dir / "requests"
-            queue.mkdir(mode=0o700, exist_ok=True)
+            queue = Path(config.get("state_dir", log_dir)) / "requests"
+            queue.mkdir(mode=0o700, parents=True, exist_ok=True)
             request_plist = plist.with_name("com.agent-kit.product-qa-requests.plist")
             worker = {**data, "Label": "com.agent-kit.product-qa-requests", "ProgramArguments": [sys.executable, str(source), "--config", str(config_path), "serve"], "QueueDirectories": [str(queue)]}
             worker.pop("StartInterval", None)
             if request_plist.exists():
                 old = plistlib.loads(request_plist.read_bytes())
-                if old.get("ProgramArguments", [None, None])[1] != str(source): raise QAError("existing GUI request job was preserved")
+                if old.get("Label") != worker["Label"] or old.get("ProgramArguments", [None, None])[1] != str(source): raise QAError("existing GUI request job was preserved")
             request_plist.write_bytes(plistlib.dumps(worker)); request_plist.chmod(0o600)
             agents.append((request_plist, worker["Label"]))
         if not no_load:

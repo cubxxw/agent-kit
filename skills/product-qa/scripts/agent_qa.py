@@ -504,7 +504,10 @@ def gui_request(config, config_path, action, project, screen=None):
     request_id = str(uuid.uuid4())
     path = state / "requests" / (request_id + ".json")
     result_path = state / "results" / (request_id + ".json")
-    private_json(path, {"id": request_id, "action": action, "project": project, "screen": screen, "created_at": time.time()})
+    intent = state / "intents" / path.name
+    private_json(intent, {"id": request_id, "action": action, "project": project, "screen": screen, "created_at": time.time()})
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.replace(intent, path)
     try:
         command(["launchctl", "kickstart", "gui/%s/com.agent-kit.product-qa-requests" % os.getuid()])
         end = time.monotonic() + 300
@@ -528,7 +531,10 @@ def serve_requests(config):
         target = state / "rejected"
         target.mkdir(mode=0o700, parents=True, exist_ok=True)
         os.replace(path, target / path.name)
-    for path in sorted(queue.glob("*.json")):
+    for path in sorted(queue.iterdir() if queue.exists() else []):
+        if not path.name.endswith(".json"):
+            reject(path)
+            continue
         if path.is_symlink() or path.stat().st_uid != os.getuid() or path.stat().st_mode & 0o077:
             reject(path)
             continue
