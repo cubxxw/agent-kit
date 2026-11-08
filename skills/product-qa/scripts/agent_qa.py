@@ -184,7 +184,14 @@ class UI:
         self.device, self.executable = device, executable
 
     def tree(self):
-        raw = command([self.executable, "describe-ui", "--udid", self.device])
+        end = time.monotonic() + 12
+        while True:
+            try:
+                raw = command([self.executable, "describe-ui", "--udid", self.device])
+                break
+            except QAError:
+                if time.monotonic() >= end: raise
+                time.sleep(0.4)
         try:
             value = json.loads(raw)
         except ValueError:
@@ -319,7 +326,7 @@ class WatchState:
         private_json(self.path, self.data)
 
 
-def active_builds():
+def active_builds(selected_device=None, allow_other_simulator_tests=False):
     listed = subprocess.run(["/usr/bin/pgrep", "-x", "xcodebuild"], capture_output=True, text=True)
     if listed.returncode != 0: return False
     for pid in listed.stdout.split():
@@ -331,17 +338,22 @@ def active_builds():
         mutations = {"build", "test", "test-without-building", "build-for-testing", "archive", "clean", "analyze", "install", "-exportArchive"}
         metadata = {"-version", "-list", "-showsdks", "-showdestinations", "-showBuildSettings", "-find-executable", "-find-library"}
         if not mutations.intersection(words) and metadata.intersection(words): continue
+        if allow_other_simulator_tests and selected_device and mutations.intersection(words) == {"test-without-building"}:
+            targets = re.findall(r"\bid=([A-Fa-f0-9-]{36})", proc.stdout)
+            if targets and all(x.lower() != selected_device.lower() for x in targets): continue
         return True
     return False
 
 
 class SharedLock:
-    def __init__(self, path="/tmp/ios-automation.xcodebuild.lock"):
+    def __init__(self, path="/tmp/ios-automation.xcodebuild.lock", selected_device=None, allow_other_simulator_tests=False):
         self.path = Path(path)
         self.pid = os.getpid()
+        self.selected_device = selected_device
+        self.allow_other_simulator_tests = allow_other_simulator_tests
 
     def __enter__(self):
-        if active_builds():
+        if active_builds(self.selected_device, self.allow_other_simulator_tests):
             raise QAError("simulator is busy with an existing build; retry when it finishes")
         result = subprocess.run(["/usr/bin/shlock", "-p", str(self.pid), "-f", str(self.path)], capture_output=True)
         if result.returncode:
@@ -493,7 +505,7 @@ def prepare_build(config, config_path, name, source_app, reviewed_origin):
     identifier = linked.get("application-identifier", "")
     if not isinstance(identifier, str) or not (identifier == p["bundle_id"] or identifier.endswith("." + p["bundle_id"])) or identifier not in linked.get("keychain-access-groups", []):
         raise QAError("source needs linked simulator keychain entitlements; use agent-qa build with the reviewed project")
-    with SharedLock(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock")):
+    with SharedLock(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock"), p["simulator_id"], config.get("allow_other_simulator_tests", False)):
         root = Path.home() / ".local/share/agent-qa/builds" / name / str(uuid.uuid4())
         root.mkdir(mode=0o700, parents=True)
         target = root / source_app.name
@@ -527,14 +539,21 @@ def build_project(config, config_path, name, reviewed_origin):
     recipe = p.get("build") or {}
     project, scheme = recipe.get("project"), recipe.get("scheme")
     if not project or not scheme or not Path(project).expanduser().is_dir(): raise QAError("private native project/scheme recipe is missing")
+    build_device = config.get("build_simulator_id", p["simulator_id"])
+    if build_device != p["simulator_id"] and any(d["udid"] == p["simulator_id"] and d["state"] == "Booted" for d in devices()):
+        raise QAError("close the dedicated QA simulator before starting a resource-intensive native build")
     guard, session = shutil.which("dev-storage-guard"), shutil.which("dev-ios-session")
     if not guard or not session: raise QAError("native build requires the installed storage guard and simulator session helper")
     artifact = Path(command([guard, "new-artifact", "agent-qa-" + name]).strip())
     if not artifact.is_absolute() or not artifact.is_dir(): raise QAError("storage guard did not issue an artifact directory")
     entitlements = artifact / "SimulatorQA.entitlements"
-    entitlements.write_bytes(plistlib.dumps(qa_entitlements("$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)")))
+    base_entitlements = {}
+    if recipe.get("entitlements"):
+        try: base_entitlements = plistlib.loads(Path(recipe["entitlements"]).expanduser().read_bytes())
+        except (OSError, ValueError): raise QAError("registered base entitlements file could not be read") from None
+    entitlements.write_bytes(plistlib.dumps(qa_entitlements("$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)", base_entitlements)))
     derived = artifact / "DerivedData"
-    args = [session, "run", "--udid", p["simulator_id"], "--timeout", "30", "--", "xcodebuild", "-project", str(Path(project).expanduser()), "-scheme", scheme,
+    args = [session, "run", "--udid", build_device, "--timeout", "30", "--", "xcodebuild", "-project", str(Path(project).expanduser()), "-scheme", scheme,
             "-configuration", recipe.get("configuration", "Debug"), "-sdk", "iphonesimulator", "-destination", "generic/platform=iOS Simulator", "-derivedDataPath", str(derived), "-jobs", "2",
             "CODE_SIGNING_ALLOWED=YES", "CODE_SIGNING_REQUIRED=NO", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual", "DEVELOPMENT_TEAM=", "ONLY_ACTIVE_ARCH=YES", "CODE_SIGN_ENTITLEMENTS=" + str(entitlements), "build"]
     env = {**os.environ, "IOS_XCODE_JOBS": "2"}
@@ -554,6 +573,17 @@ def build_project(config, config_path, name, reviewed_origin):
         if data.get("CFBundleIdentifier") == p["bundle_id"]: matches.append(app)
     if len(matches) != 1: raise QAError("native build did not produce the registered app")
     return prepare_build(config, config_path, name, matches[0], reviewed_origin)
+
+
+def close_devices(config):
+    selected = sorted({p["simulator_id"] for p in config["projects"].values()})
+    closed = []
+    for device in selected:
+        with SharedLock(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock"), device, config.get("allow_other_simulator_tests", False)):
+            if any(d["udid"] == device and d["state"] == "Booted" for d in devices()):
+                command(["xcrun", "simctl", "shutdown", device], timeout=120)
+                closed.append(device)
+    return {"qa_simulators_closed": closed, "data_preserved": True}
 
 
 def verify_native_binding(p, binary):
@@ -579,7 +609,7 @@ def open_project(config, name, screen=None, _lock_held=False):
     p = validate_profile(config["projects"][name])
     state_dir = Path(config.get("state_dir", Path.home() / ".local/state/agent-qa"))
     def stage(phase): private_json(state_dir / (name + "-progress.json"), {"project": name, "phase": phase, "at": time.time()})
-    lock = contextlib.nullcontext() if _lock_held else SharedLock(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock"))
+    lock = contextlib.nullcontext() if _lock_held else SharedLock(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock"), p["simulator_id"], config.get("allow_other_simulator_tests", False))
     with lock:
         stage("selecting_simulator")
         inventory = devices()
@@ -660,14 +690,14 @@ def open_project(config, name, screen=None, _lock_held=False):
 def watch_once(config):
     state_dir = Path(config.get("state_dir", Path.home() / ".local/state/agent-qa"))
     if (state_dir / "paused").exists(): return []
-    if active_builds(): return []
+    if not config.get("allow_other_simulator_tests") and active_builds(): return []
     results = []
     for device in devices():
         if device["state"] != "Booted": continue
         choices = [name for name, p in config["projects"].items() if p.get("watch_boot") and p["simulator_id"] == device["udid"]]
         if not choices: continue
         try:
-            with SharedLock(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock")):
+            with SharedLock(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock"), device["udid"], config.get("allow_other_simulator_tests", False)):
                 if (state_dir / "paused").exists(): continue
                 selected = WatchState(state_dir / "selected.json").data
                 state = WatchState(state_dir / "watch.json")
@@ -791,6 +821,7 @@ def main(argv=None):
     commands.add_parser("watch").add_argument("--once", action="store_true")
     commands.add_parser("serve")
     for name in ("pause", "resume", "status"): commands.add_parser(name)
+    commands.add_parser("close")
     args = parser.parse_args(argv)
     try:
         config = load_config(args.config)
@@ -803,6 +834,8 @@ def main(argv=None):
             result = prepare_build(config, args.config, args.project, args.app, args.reviewed_origin)
         elif args.command == "build":
             result = build_project(config, args.config, args.project, args.reviewed_origin)
+        elif args.command == "close":
+            result = close_devices(config)
         elif args.command in ("open", "check") and config.get("gui_bridge") and os.environ.get("SSH_CONNECTION"):
             result = gui_request(config, args.config, args.command, args.project, getattr(args, "screen", None))
         elif args.command == "serve":

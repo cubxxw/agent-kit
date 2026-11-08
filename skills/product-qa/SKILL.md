@@ -44,6 +44,12 @@ builds, leaves other devices alone and bounds failure retries. Use
 `agent-qa resume` restores monitoring. The foreground `open` command remains
 available while automatic monitoring is paused.
 
+Use the registered dedicated QA simulator so unrelated builds cannot replace
+its apps. `agent-qa close` shuts down only registered QA devices and preserves
+their data. Before a heavy build, close QA first; `build_simulator_id` may bind
+the build session to the machine's ordinary shared primary device. Preparation
+and `open` return to the dedicated QA device afterward.
+
 For machine setup, use [the configuration contract](references/configuration.md).
 Install only this skill with Agent Kit's `qa` profile. Machine-local profiles,
 runtime receipts and AXe binaries remain outside this public repository.

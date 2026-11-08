@@ -215,6 +215,12 @@ class ProductQATests(unittest.TestCase):
         self.assertIn("--element-type",run.call_args.args[0])
         self.assertIn("Button",run.call_args.args[0])
 
+    def test_first_boot_accessibility_bridge_is_allowed_to_become_ready(self):
+        ui=self.qa.UI("device")
+        with patch.object(self.qa,"command",side_effect=[self.qa.QAError("accessibility not ready"),'[{"type":"Application","AXLabel":"Example"}]']) as run,patch.object(self.qa.time,"sleep"):
+            self.assertEqual("Example",ui.tree()[0]["AXLabel"])
+        self.assertEqual(2,run.call_count)
+
     def test_xcode_metadata_probe_is_not_an_active_build(self):
         class Result:
             returncode=0
@@ -235,6 +241,27 @@ class ProductQATests(unittest.TestCase):
             def __init__(self,stdout):self.stdout=stdout
         with patch.object(self.qa.subprocess,"run",side_effect=[Result("123\n"),Result("Z (xcodebuild)")]):
             self.assertFalse(self.qa.active_builds())
+
+    def test_opt_in_allows_only_other_device_tests_without_building(self):
+        class Result:
+            returncode=0
+            def __init__(self,stdout):self.stdout=stdout
+        other="S xcodebuild test-without-building -destination id=22222222-2222-4222-8222-222222222222"
+        with patch.object(self.qa.subprocess,"run",side_effect=[Result("123\n"),Result(other)]):
+            self.assertFalse(self.qa.active_builds(profile()["simulator_id"],True))
+        same="S xcodebuild test-without-building -destination id="+profile()["simulator_id"]
+        with patch.object(self.qa.subprocess,"run",side_effect=[Result("123\n"),Result(same)]):
+            self.assertTrue(self.qa.active_builds(profile()["simulator_id"],True))
+        with patch.object(self.qa.subprocess,"run",side_effect=[Result("123\n"),Result(other.replace("test-without-building","build"))]):
+            self.assertTrue(self.qa.active_builds(profile()["simulator_id"],True))
+
+    def test_close_only_shuts_down_registered_qa_devices(self):
+        selected=profile()["simulator_id"]
+        config={"projects":{"example":profile()},"allow_other_simulator_tests":True}
+        inventory=[{"udid":selected,"state":"Booted"},{"udid":"22222222-2222-4222-8222-222222222222","state":"Booted"}]
+        with patch.object(self.qa,"SharedLock",return_value=contextlib.nullcontext()),patch.object(self.qa,"devices",return_value=inventory),patch.object(self.qa,"command") as run:
+            self.qa.close_devices(config)
+        run.assert_called_once_with(["xcrun","simctl","shutdown",selected],timeout=120)
 
     def test_qa_signing_assigns_an_isolated_keychain_group(self):
         original={"keychain-access-groups":["FOREIGN.production"],"com.apple.security.application-groups":["group.example.qa"]}

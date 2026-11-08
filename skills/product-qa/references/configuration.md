@@ -1,10 +1,13 @@
 # Machine configuration
 
 Requires macOS, Xcode Simulator tools, AXe, Python 3.9+, an unlocked user
-keychain and a GUI login session for boot monitoring. Use an existing simulator
-and build; the launcher does not build, erase or create devices.
+keychain and a GUI login session for boot monitoring. Daily `open` reuses its
+registered device/build and never creates or erases devices. Initial setup can
+register a dedicated QA simulator so other projects cannot replace its apps.
 
-Each private profile can provide `build: {project, scheme, configuration}`.
+Each private profile can provide `build: {project, scheme, configuration,
+entitlements}`; the optional entitlement path preserves the product's existing
+capabilities while adding the required linked keychain identity.
 `agent-qa build <project> --reviewed-origin <origin>` obtains a registered storage
 artifact and runs Xcode inside the existing simulator session helper, using two
 jobs and standard Simulator entitlement handling without an Apple publishing
@@ -27,6 +30,12 @@ lock at `/tmp/ios-automation.xcodebuild.lock` when sharing existing iOS tooling.
 `allow_other_booted_devices: true` permits targeting the registered device while
 leaving other booted devices untouched; it does not bypass the shared lock or
 active builds. Read-only Xcode version/SDK probes do not count as active builds.
+An explicit `allow_other_simulator_tests: true` allows only already-built tests
+targeting different, explicit simulator UUIDs; it never bypasses the lock,
+same-device tests, compilation or archiving. `build_simulator_id` can select
+the ordinary shared build device separately from the dedicated interactive QA
+device. Run `agent-qa close` before such a heavy build; only registered QA devices
+are shut down and their data is retained.
 
 Each profile contains `kind` (`leafhour`, `tormie`, `supabase`), `server` (one
 HTTPS origin), `email`, `expected_user_id`, `bundle_id`, `simulator_id`,
