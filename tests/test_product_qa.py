@@ -221,6 +221,12 @@ class ProductQATests(unittest.TestCase):
             self.assertEqual("Example",ui.tree()[0]["AXLabel"])
         self.assertEqual(2,run.call_count)
 
+    def test_remote_shell_can_discover_user_installed_build_helpers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home=Path(tmp);tool=home/".local/bin/dev-ios-session";tool.parent.mkdir(parents=True);tool.write_text("#!/bin/sh\nexit 0\n");tool.chmod(0o755)
+            with patch.object(self.qa.shutil,"which",return_value=None),patch.object(self.qa.Path,"home",return_value=home):
+                self.assertEqual(str(tool),self.qa.find_helper("dev-ios-session"))
+
     def test_xcode_metadata_probe_is_not_an_active_build(self):
         class Result:
             returncode=0

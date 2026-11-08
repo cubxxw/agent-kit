@@ -532,6 +532,13 @@ def prepare_build(config, config_path, name, source_app, reviewed_origin):
         return {"project": name, "simulator_build_prepared": True, "keychain_entitlements": True, "native_binding_pinned": True}
 
 
+def find_helper(name):
+    found = shutil.which(name)
+    if found: return found
+    local = Path.home() / ".local/bin" / name
+    return str(local) if local.is_file() and os.access(local, os.X_OK) else None
+
+
 def build_project(config, config_path, name, reviewed_origin):
     validate_project_name(name)
     p = config["projects"][name]
@@ -542,7 +549,7 @@ def build_project(config, config_path, name, reviewed_origin):
     build_device = config.get("build_simulator_id", p["simulator_id"])
     if build_device != p["simulator_id"] and any(d["udid"] == p["simulator_id"] and d["state"] == "Booted" for d in devices()):
         raise QAError("close the dedicated QA simulator before starting a resource-intensive native build")
-    guard, session = shutil.which("dev-storage-guard"), shutil.which("dev-ios-session")
+    guard, session = find_helper("dev-storage-guard"), find_helper("dev-ios-session")
     if not guard or not session: raise QAError("native build requires the installed storage guard and simulator session helper")
     artifact = Path(command([guard, "new-artifact", "agent-qa-" + name]).strip())
     if not artifact.is_absolute() or not artifact.is_dir(): raise QAError("storage guard did not issue an artifact directory")
@@ -556,7 +563,7 @@ def build_project(config, config_path, name, reviewed_origin):
     args = [session, "run", "--udid", build_device, "--timeout", "30", "--", "xcodebuild", "-project", str(Path(project).expanduser()), "-scheme", scheme,
             "-configuration", recipe.get("configuration", "Debug"), "-sdk", "iphonesimulator", "-destination", "generic/platform=iOS Simulator", "-derivedDataPath", str(derived), "-jobs", "2",
             "CODE_SIGNING_ALLOWED=YES", "CODE_SIGNING_REQUIRED=NO", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual", "DEVELOPMENT_TEAM=", "ONLY_ACTIVE_ARCH=YES", "CODE_SIGN_ENTITLEMENTS=" + str(entitlements), "build"]
-    env = {**os.environ, "IOS_XCODE_JOBS": "2"}
+    env = {**os.environ, "IOS_XCODE_JOBS": "2", "PATH": str(Path.home() / ".local/bin") + os.pathsep + os.environ.get("PATH", "/usr/bin:/bin")}
     log = artifact / "build.log"
     fd = os.open(log, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
     with os.fdopen(fd, "w") as out:
