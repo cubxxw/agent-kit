@@ -6,13 +6,18 @@ registered device/build and never creates or erases devices. Initial setup can
 register a dedicated QA simulator so other projects cannot replace its apps.
 
 Each private profile can provide `build: {project, scheme, configuration,
-entitlements}`; the optional entitlement path preserves the product's existing
+entitlements, generate_spec, prepare_commands}`; the optional entitlement path preserves the product's existing
 capabilities while adding the required linked keychain identity.
 `agent-qa build <project> --reviewed-origin <origin>` obtains a registered storage
 artifact and runs Xcode inside the existing simulator session helper, using two
 jobs and standard Simulator entitlement handling without an Apple publishing
 identity. Source copies and logs remain private. The build must produce the
 registered bundle identifier.
+Canonical resource commands (explicit argv lists) and XcodeGen run inside the
+owned build session; the existing generated project is backed up first. Build
+cancellation asks the reservation owner to clean up rather than killing that
+owner while descendants may still run. Custom lock paths are forwarded to the
+session helper.
 
 Reuse a reviewed build with `agent-qa prepare <project> --app <source.app>
 --reviewed-origin <origin>`. Only matching Simulator bundles with linked keychain
@@ -53,7 +58,7 @@ override to match the pinned origin. Hash verification precedes keychain reads.
 The `ui` contract has selectors for `email_field`, `password_field`, `submit`;
 navigation lists `account_steps`, `after_login_steps`, `leave_account_steps`;
 required `identity_anchor` for the authenticated account surface (a scoped form
-or its unique sign-out button), optional `before_login_steps`, `email_placeholder`, `login_probe_timeout`, and
+or a unique authenticated account control), optional `before_login_steps`, `email_placeholder`, `login_probe_timeout`, and
 `screens` (page name to steps). Selectors use stable `id`, exact `label`, and/or
 `type`. Steps have `action: tap|wait|wait_gone|gesture`, `selector`, optional `timeout`, and
 `optional` for taps. Identity proof excludes editable fields.

@@ -9,7 +9,7 @@ import struct
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 SCRIPT = Path(__file__).resolve().parents[1] / "skills/product-qa/scripts/agent_qa.py"
 
@@ -221,6 +221,15 @@ class ProductQATests(unittest.TestCase):
             self.assertEqual("Example",ui.tree()[0]["AXLabel"])
         self.assertEqual(2,run.call_count)
 
+    def test_account_navigation_retries_a_dismissed_startup_menu(self):
+        ui=self.qa.UI("device");state={"attempts":0}
+        def steps(_):state["attempts"]+=1
+        def tree():return [{"AXUniqueId":"account","type":"Group"}] if state["attempts"]>=2 else []
+        route={"identity_anchor":{"id":"account"},"email_field":{"id":"email"}}
+        with patch.object(ui,"steps",side_effect=steps),patch.object(ui,"tree",side_effect=tree),patch.object(self.qa.time,"sleep"):
+            ui.navigate_account([],route)
+        self.assertEqual(2,state["attempts"])
+
     def test_remote_shell_can_discover_user_installed_build_helpers(self):
         with tempfile.TemporaryDirectory() as tmp:
             home=Path(tmp);tool=home/".local/bin/dev-ios-session";tool.parent.mkdir(parents=True);tool.write_text("#!/bin/sh\nexit 0\n");tool.chmod(0o755)
@@ -236,6 +245,28 @@ class ProductQATests(unittest.TestCase):
                 self.qa.generate_project({"project":str(project),"generate_spec":str(spec)},artifact)
             self.assertEqual("original project",(artifact/"original-project.xcodeproj/project.pbxproj").read_text())
             self.assertEqual("regenerated project",(project/"project.pbxproj").read_text())
+
+    def test_build_timeout_allows_the_owned_session_to_cleanup(self):
+        process=Mock();process.wait.side_effect=[self.qa.subprocess.TimeoutExpired(["session"],1),0]
+        with patch.object(self.qa.subprocess,"Popen",return_value=process):
+            with self.assertRaises(self.qa.QAError):self.qa.run_native_build(["session"],{},None,1)
+        process.terminate.assert_called_once()
+        process.kill.assert_not_called()
+
+    def test_build_keeps_reservation_owner_when_cleanup_is_still_pending(self):
+        process=Mock();process.wait.side_effect=[self.qa.subprocess.TimeoutExpired(["session"],1),self.qa.subprocess.TimeoutExpired(["session"],30)]
+        with patch.object(self.qa.subprocess,"Popen",return_value=process):
+            with self.assertRaises(self.qa.QAError):self.qa.run_native_build(["session"],{},None,1)
+        process.kill.assert_not_called()
+
+    def test_failed_build_reservation_cannot_regenerate_shared_project(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);project=root/"Example.xcodeproj";project.mkdir();artifact=root/"artifact";artifact.mkdir()
+            config={"projects":{"example":{**profile(),"build":{"project":str(project),"scheme":"Example","generate_spec":str(root/"project.yml")}}},"lock_file":str(root/"custom.lock"),"state_dir":str(root/"state")}
+            with patch.object(self.qa,"find_helper",side_effect=lambda n:"/mock/"+n),patch.object(self.qa,"command",return_value=str(artifact)),patch.object(self.qa,"generate_project") as generated,patch.object(self.qa,"run_native_build",return_value=1) as run:
+                with self.assertRaises(self.qa.QAError):self.qa.build_project(config,root/"config.json","example",profile()["server"])
+            generated.assert_not_called()
+            self.assertEqual(config["lock_file"],run.call_args.args[1]["IOS_AUTOMATION_LOCK_FILE"])
 
     def test_xcode_metadata_probe_is_not_an_active_build(self):
         class Result:

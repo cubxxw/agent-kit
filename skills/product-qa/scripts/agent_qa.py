@@ -219,7 +219,7 @@ class UI:
     def find(self, selector, items=None):
         matches = [x for x in (items if items is not None else self.tree()) if self.matches(x, selector)]
         if "type" not in selector:
-            controls = [x for x in matches if x.get("type") in ("Button", "TextField", "SecureTextField", "RadioButton", "Switch", "CheckBox", "Slider")]
+            controls = [x for x in matches if x.get("type") in ("Button", "PopUpButton", "MenuButton", "MenuItem", "TextField", "SecureTextField", "RadioButton", "Switch", "CheckBox", "Slider")]
             if controls: return max(controls, key=lambda x: len(x.get("_parents", [])))
         return max(matches, key=lambda x: len(x.get("_parents", []))) if matches else None
 
@@ -286,6 +286,8 @@ class UI:
         for step in steps:
             if step.get("if_absent") and self.find(step["if_absent"]) is not None:
                 continue
+            if step.get("if_present") and self.find(step["if_present"]) is None:
+                continue
             action = step["action"]
             if action == "tap":
                 self.tap(step["selector"], timeout=step.get("timeout", 6), optional=step.get("optional", False))
@@ -305,6 +307,20 @@ class UI:
                 time.sleep(0.5)
             else:
                 raise QAError("unsupported UI step")
+
+    def navigate_account(self, steps, route):
+        def ready():
+            items = self.tree()
+            return self.find(route["identity_anchor"], items) is not None or self.find(route["email_field"], items) is not None
+        for attempt in range(2):
+            if ready(): return
+            try: self.steps(steps)
+            except QAError:
+                if attempt == 1: raise
+            for _ in range(4):
+                if ready(): return
+                time.sleep(0.4)
+        raise QAError("native account navigation did not settle")
 
 
 class WatchState:
@@ -553,6 +569,38 @@ def generate_project(recipe, artifact):
     command([generator, "generate", "--spec", str(spec), "--project", str(project.parent)], timeout=90)
 
 
+def run_native_build(args, env, output, timeout=1800):
+    process = subprocess.Popen(args, stdout=output, stderr=subprocess.STDOUT, env=env)
+    try:
+        return process.wait(timeout=timeout)
+    except (subprocess.TimeoutExpired, KeyboardInterrupt):
+        process.terminate()
+        try: process.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            raise QAError("native build cleanup is still pending; the session owner and reservation were retained") from None
+        raise QAError("native build interrupted; inspect its private artifact before retrying") from None
+
+
+def perform_native_build(config, name, artifact):
+    session = find_helper("dev-ios-session")
+    if not session: raise QAError("native build session helper is unavailable")
+    owned = subprocess.run([session, "is-owner"], capture_output=True)
+    if owned.returncode: raise QAError("native resource generation requires an owned build session")
+    artifact = Path(artifact).expanduser().resolve()
+    intent_path = artifact / "build-intent.json"
+    if intent_path.is_symlink() or intent_path.stat().st_mode & 0o077: raise QAError("native build intent is not private")
+    intent = json.loads(intent_path.read_text())
+    p = config["projects"][name]
+    recipe = p["build"]
+    if intent.get("project") != name or intent.get("bundle_id") != p["bundle_id"] or intent.get("source_project") != recipe["project"]:
+        raise QAError("native build intent differs from its registered recipe")
+    generate_project(recipe, artifact)
+    args = ["xcodebuild", "-project", str(Path(recipe["project"]).expanduser()), "-scheme", recipe["scheme"],
+            "-configuration", recipe.get("configuration", "Debug"), "-destination", "generic/platform=iOS Simulator", "-derivedDataPath", str(artifact / "DerivedData"), "-jobs", "2",
+            "CODE_SIGNING_ALLOWED=YES", "CODE_SIGNING_REQUIRED=NO", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual", "DEVELOPMENT_TEAM=", "ONLY_ACTIVE_ARCH=YES", "ARCHS=" + recipe.get("architecture", platform.machine()), "CODE_SIGN_ENTITLEMENTS=" + str(artifact / "SimulatorQA.entitlements"), "build"]
+    return subprocess.call(args)
+
+
 def build_project(config, config_path, name, reviewed_origin):
     validate_project_name(name)
     p = config["projects"][name]
@@ -567,7 +615,6 @@ def build_project(config, config_path, name, reviewed_origin):
     if not guard or not session: raise QAError("native build requires the installed storage guard and simulator session helper")
     artifact = Path(command([guard, "new-artifact", "agent-qa-" + name]).strip())
     if not artifact.is_absolute() or not artifact.is_dir(): raise QAError("storage guard did not issue an artifact directory")
-    generate_project(recipe, artifact)
     entitlements = artifact / "SimulatorQA.entitlements"
     base_entitlements = {}
     if recipe.get("entitlements"):
@@ -575,18 +622,20 @@ def build_project(config, config_path, name, reviewed_origin):
         except (OSError, ValueError): raise QAError("registered base entitlements file could not be read") from None
     entitlements.write_bytes(plistlib.dumps(qa_entitlements("$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)", base_entitlements)))
     derived = artifact / "DerivedData"
-    args = [session, "run", "--udid", build_device, "--timeout", "30", "--", "xcodebuild", "-project", str(Path(project).expanduser()), "-scheme", scheme,
-            "-configuration", recipe.get("configuration", "Debug"), "-destination", "generic/platform=iOS Simulator", "-derivedDataPath", str(derived), "-jobs", "2",
-            "CODE_SIGNING_ALLOWED=YES", "CODE_SIGNING_REQUIRED=NO", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual", "DEVELOPMENT_TEAM=", "ONLY_ACTIVE_ARCH=YES", "CODE_SIGN_ENTITLEMENTS=" + str(entitlements), "build"]
-    env = {**os.environ, "IOS_XCODE_JOBS": "2", "PATH": str(Path.home() / ".local/bin") + os.pathsep + os.environ.get("PATH", "/usr/bin:/bin")}
+    private_json(artifact / "build-intent.json", {"project": name, "bundle_id": p["bundle_id"], "source_project": recipe["project"]})
+    args = [session, "run", "--udid", build_device, "--timeout", "30", "--", sys.executable, str(Path(__file__).resolve()), "--config", str(Path(config_path).expanduser()), "native-build", name, "--artifact", str(artifact)]
+    env = {**os.environ, "IOS_XCODE_JOBS": "2", "IOS_AUTOMATION_LOCK_FILE": str(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock")), "PATH": str(Path.home() / ".local/bin") + os.pathsep + os.environ.get("PATH", "/usr/bin:/bin")}
     log = artifact / "build.log"
+    state = Path(config.get("state_dir", Path.home() / ".local/state/agent-qa"))
+    private_json(state / (name + "-build.json"), {"artifact": str(artifact), "status": "running", "at": time.time()})
     fd = os.open(log, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
     with os.fdopen(fd, "w") as out:
-        try: result = subprocess.run(args, stdout=out, stderr=subprocess.STDOUT, env=env, timeout=1800)
-        except subprocess.TimeoutExpired: raise QAError("native build timed out; inspect its private artifact before retrying") from None
-    state = Path(config.get("state_dir", Path.home() / ".local/state/agent-qa"))
-    private_json(state / (name + "-build.json"), {"artifact": str(artifact), "exit": result.returncode, "at": time.time()})
-    if result.returncode: raise QAError("native build failed; inspect its private build.log")
+        try: code = run_native_build(args, env, out)
+        except QAError:
+            private_json(state / (name + "-build.json"), {"artifact": str(artifact), "status": "interrupted", "at": time.time()})
+            raise
+    private_json(state / (name + "-build.json"), {"artifact": str(artifact), "exit": code, "at": time.time()})
+    if code: raise QAError("native build failed; inspect its private build.log")
     products = derived / "Build/Products" / (recipe.get("configuration", "Debug") + "-iphonesimulator")
     matches = []
     for app in products.glob("*.app"):
@@ -665,7 +714,7 @@ def open_project(config, name, screen=None, _lock_held=False):
         command(["xcrun", "simctl", "launch", "--terminate-running-process", device["udid"], p["bundle_id"], *p.get("launch_args", [])], env=env)
         ui = UI(device["udid"], config.get("axe", "axe"))
         stage("opening_account_surface")
-        ui.steps(route.get("account_steps", []))
+        ui.navigate_account(route.get("account_steps", []), route)
         entered = False
         account_ready = visible_email(ui.tree(), p["email"], route["identity_anchor"])
         email_field = None if account_ready else ui.wait(route["email_field"], route.get("login_probe_timeout", 8))
@@ -681,7 +730,7 @@ def open_project(config, name, screen=None, _lock_held=False):
             entered = True
             stage("waiting_for_native_login")
             ui.steps([{"action": "wait_gone", "selector": route["email_field"], "timeout": 65}])
-            ui.steps(route.get("after_login_steps", []))
+            ui.navigate_account(route.get("after_login_steps", []), route)
         stage("verifying_native_account")
         anchor = route.get("identity_anchor")
         if anchor and ui.wait(anchor, 40) is None:
@@ -840,6 +889,9 @@ def main(argv=None):
     build = commands.add_parser("build")
     build.add_argument("project")
     build.add_argument("--reviewed-origin", required=True)
+    internal = commands.add_parser("native-build", help=argparse.SUPPRESS)
+    internal.add_argument("project")
+    internal.add_argument("--artifact", required=True)
     commands.add_parser("watch").add_argument("--once", action="store_true")
     commands.add_parser("serve")
     for name in ("pause", "resume", "status"): commands.add_parser(name)
@@ -856,6 +908,8 @@ def main(argv=None):
             result = prepare_build(config, args.config, args.project, args.app, args.reviewed_origin)
         elif args.command == "build":
             result = build_project(config, args.config, args.project, args.reviewed_origin)
+        elif args.command == "native-build":
+            return perform_native_build(config, args.project, args.artifact)
         elif args.command == "close":
             result = close_devices(config)
         elif args.command in ("open", "check") and config.get("gui_bridge") and os.environ.get("SSH_CONNECTION"):
