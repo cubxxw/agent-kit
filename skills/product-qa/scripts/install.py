@@ -39,7 +39,7 @@ def install(home, watch=False, no_load=False, gui=False):
         plist = home / "Library/LaunchAgents/com.agent-kit.product-qa.plist"
         plist.parent.mkdir(parents=True, exist_ok=True)
         data = {"Label": "com.agent-kit.product-qa", "ProgramArguments": [sys.executable, str(source), "--config", str(config_path), "watch", "--once"],
-                "RunAtLoad": True, "StartInterval": 20, "ProcessType": "Background", "Umask": 0o077,
+                "RunAtLoad": True, "StartInterval": 20, "ProcessType": "Interactive", "Umask": 0o077,
                 "EnvironmentVariables": {"PATH": str(home / ".local/bin") + ":/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"},
                 "StandardOutPath": str(logs[0]), "StandardErrorPath": str(logs[1])}
         if watch and plist.exists():

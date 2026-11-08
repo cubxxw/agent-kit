@@ -95,3 +95,7 @@ The CLI uses the native app's durable session. It never injects fake sessions
 or passwords through launch arguments/environments. For intentional credential
 failure tests, pause monitoring first. Network and credential failures remain
 visible; the monitor retries at most three times per boot, five minutes apart.
+
+The launchd UI jobs use the app resource class (`ProcessType: Interactive`):
+they drive visible native UI, while Background throttling can starve Simulator
+and keychain requests on a loaded shared Mac. They do not run native builds.

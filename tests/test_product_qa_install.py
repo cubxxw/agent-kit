@@ -48,6 +48,14 @@ class ProductQAInstallTests(unittest.TestCase):
             p=home/"Library/LaunchAgents/com.agent-kit.product-qa-requests.plist"
             self.assertEqual([str(Path(config["state_dir"])/"requests")],plistlib.loads(p.read_bytes())["QueueDirectories"])
 
+    def test_visible_ui_jobs_use_app_resource_classification(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home=Path(tmp);self.config(home)
+            subprocess.run([sys.executable,str(SCRIPT),"--home",tmp,"--watch","--gui","--no-load"],capture_output=True,check=True)
+            for name in ("com.agent-kit.product-qa.plist","com.agent-kit.product-qa-requests.plist"):
+                data=plistlib.loads((home/"Library/LaunchAgents"/name).read_bytes())
+                self.assertEqual("Interactive",data["ProcessType"])
+
     def test_gui_install_preserves_a_foreign_label_with_the_same_script(self):
         with tempfile.TemporaryDirectory() as tmp:
             home=Path(tmp);self.config(home)
