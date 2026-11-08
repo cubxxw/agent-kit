@@ -302,14 +302,28 @@ class WatchState:
         private_json(self.path, self.data)
 
 
+def active_builds():
+    listed = subprocess.run(["/usr/bin/pgrep", "-x", "xcodebuild"], capture_output=True, text=True)
+    if listed.returncode != 0: return False
+    for pid in listed.stdout.split():
+        if not pid.isdigit(): continue
+        proc = subprocess.run(["/bin/ps", "-p", pid, "-o", "command="], capture_output=True, text=True)
+        if proc.returncode or not proc.stdout.strip(): continue
+        words = proc.stdout.split()
+        mutations = {"build", "test", "test-without-building", "build-for-testing", "archive", "clean", "analyze", "install", "-exportArchive"}
+        metadata = {"-version", "-list", "-showsdks", "-showdestinations", "-showBuildSettings", "-find-executable", "-find-library"}
+        if not mutations.intersection(words) and metadata.intersection(words): continue
+        return True
+    return False
+
+
 class SharedLock:
     def __init__(self, path="/tmp/ios-automation.xcodebuild.lock"):
         self.path = Path(path)
         self.pid = os.getpid()
 
     def __enter__(self):
-        builders = subprocess.run(["/usr/bin/pgrep", "-x", "xcodebuild"], capture_output=True)
-        if builders.returncode == 0:
+        if active_builds():
             raise QAError("simulator is busy with an existing build; retry when it finishes")
         result = subprocess.run(["/usr/bin/shlock", "-p", str(self.pid), "-f", str(self.path)], capture_output=True)
         if result.returncode:
@@ -370,10 +384,71 @@ def native_digest(binary):
     files = sorted(p for p in binary.parent.rglob("*") if p.is_file()) if binary.parent.suffix == ".app" else [binary]
     digest = hashlib.sha256()
     for path in files:
+        if not path.resolve().is_relative_to(binary.parent.resolve()):
+            raise QAError("native bundle contains an external file link")
         digest.update(str(path.relative_to(binary.parent)).encode())
         with path.open("rb") as source:
             for chunk in iter(lambda: source.read(1024 * 1024), b""): digest.update(chunk)
     return digest.hexdigest()
+
+
+def qa_entitlements(bundle_id, original=None):
+    if not re.fullmatch(r"[A-Za-z0-9.-]+", bundle_id): raise QAError("invalid native bundle identifier")
+    values = dict(original or {})
+    identifier = "AGENTQA000." + bundle_id
+    values.update({"application-identifier": identifier, "com.apple.application-identifier": identifier,
+                   "com.apple.developer.team-identifier": "AGENTQA000", "keychain-access-groups": [identifier], "get-task-allow": True})
+    return values
+
+
+def read_entitlements(app):
+    result = subprocess.run(["/usr/bin/codesign", "-d", "--entitlements", ":-", str(app)], capture_output=True)
+    try: return plistlib.loads(result.stdout)
+    except (plistlib.InvalidFileException, ValueError): return {}
+
+
+def prepare_build(config, config_path, name, source_app, reviewed_origin):
+    p = config["projects"][name]
+    if reviewed_origin.rstrip("/") != p["server"].rstrip("/"):
+        raise QAError("the reviewed native origin differs from the registered server")
+    source_app = Path(source_app).expanduser().resolve()
+    try: info = plistlib.loads((source_app / "Info.plist").read_bytes())
+    except (OSError, ValueError, plistlib.InvalidFileException):
+        raise QAError("source is not a readable native application bundle") from None
+    if source_app.suffix != ".app" or info.get("CFBundleIdentifier") != p["bundle_id"]:
+        raise QAError("source app does not match the registered test bundle")
+    if not str(info.get("DTPlatformName", "")).endswith("simulator"):
+        raise QAError("only simulator builds may receive local QA signing")
+    with SharedLock(config.get("lock_file", "/tmp/ios-automation.xcodebuild.lock")):
+        root = Path.home() / ".local/share/agent-qa/builds" / name / str(uuid.uuid4())
+        root.mkdir(mode=0o700, parents=True)
+        target = root / source_app.name
+        shutil.copytree(source_app, target, symlinks=True)
+        libraries = [x for x in target.rglob("*") if x.suffix in (".dylib", ".framework")]
+        for library in sorted(libraries, key=lambda x: len(x.parts), reverse=True):
+            command(["/usr/bin/codesign", "--force", "--sign", "-", "--timestamp=none", str(library)], timeout=90)
+        bundles = [x for x in target.rglob("*") if x.is_dir() and x.suffix in (".app", ".appex")] + [target]
+        for index, bundle in enumerate(sorted(bundles, key=lambda x: len(x.parts), reverse=True)):
+            data = plistlib.loads((bundle / "Info.plist").read_bytes())
+            entitlements = qa_entitlements(data["CFBundleIdentifier"], read_entitlements(bundle))
+            entitlement_path = root / ("entitlements-%s.plist" % index)
+            entitlement_path.write_bytes(plistlib.dumps(entitlements))
+            command(["/usr/bin/codesign", "--force", "--sign", "-", "--timestamp=none", "--entitlements", str(entitlement_path), "--generate-entitlement-der", str(bundle)], timeout=90)
+        command(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(target)], timeout=60)
+        inventory = devices()
+        device = next((d for d in inventory if d["udid"] == p["simulator_id"]), None)
+        if not device: raise QAError("registered simulator is unavailable")
+        if device["state"] != "Booted":
+            command(["xcrun", "simctl", "boot", device["udid"]])
+            command(["xcrun", "simctl", "bootstatus", device["udid"], "-b"], timeout=180)
+        subprocess.run(["xcrun", "simctl", "terminate", device["udid"], p["bundle_id"]], capture_output=True)
+        command(["xcrun", "simctl", "install", device["udid"], str(target)], timeout=180)
+        installed = installed_apps(device["udid"])[p["bundle_id"]]
+        binary = Path(parse.unquote(parse.urlsplit(installed["Bundle"]).path)) / installed["CFBundleExecutable"]
+        p["native_binding"] = {"origin": p["server"], "sha256": native_digest(binary), "reviewed_at": time.time(), "simulator_qa_signing": True}
+        p["prepared_app"] = str(target)
+        private_json(Path(config_path).expanduser(), config)
+        return {"project": name, "simulator_build_prepared": True, "keychain_entitlements": True, "native_binding_pinned": True}
 
 
 def verify_native_binding(p, binary):
@@ -479,7 +554,7 @@ def open_project(config, name, screen=None, _lock_held=False):
 def watch_once(config):
     state_dir = Path(config.get("state_dir", Path.home() / ".local/state/agent-qa"))
     if (state_dir / "paused").exists(): return []
-    if subprocess.run(["/usr/bin/pgrep", "-x", "xcodebuild"], capture_output=True).returncode == 0: return []
+    if active_builds(): return []
     results = []
     for device in devices():
         if device["state"] != "Booted": continue
@@ -598,6 +673,10 @@ def main(argv=None):
         sub = commands.add_parser(name)
         sub.add_argument("project")
         if name == "open": sub.add_argument("--screen")
+    prep = commands.add_parser("prepare")
+    prep.add_argument("project")
+    prep.add_argument("--app", required=True)
+    prep.add_argument("--reviewed-origin", required=True)
     commands.add_parser("watch").add_argument("--once", action="store_true")
     commands.add_parser("serve")
     for name in ("pause", "resume", "status"): commands.add_parser(name)
@@ -609,6 +688,8 @@ def main(argv=None):
             missing = [tool for tool in ("xcrun", "security", config.get("axe", "axe")) if not shutil.which(tool)]
             if missing: raise QAError("missing tools: " + ", ".join(missing))
             result = {"status": "configured", "projects": list(config["projects"]), "paused": (state / "paused").exists()}
+        elif args.command == "prepare":
+            result = prepare_build(config, args.config, args.project, args.app, args.reviewed_origin)
         elif args.command in ("open", "check") and config.get("gui_bridge") and os.environ.get("SSH_CONNECTION"):
             result = gui_request(config, args.config, args.command, args.project, getattr(args, "screen", None))
         elif args.command == "serve":

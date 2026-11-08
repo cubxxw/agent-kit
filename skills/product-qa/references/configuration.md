@@ -4,10 +4,21 @@ Requires macOS, Xcode Simulator tools, AXe, Python 3.9+, an unlocked user
 keychain and a GUI login session for boot monitoring. Use an existing simulator
 and build; the launcher does not build, erase or create devices.
 
+Prepare each reviewed simulator build once with `agent-qa prepare <project>
+--app <source.app> --reviewed-origin <origin>`. Only a matching simulator bundle
+is accepted. A private copy is signed locally with an isolated QA application
+identifier and keychain group; nested code is signed and verified, then the
+registered device receives that copy. This requires no Apple signing secret.
+Repeat after a source build changes. This explicit preparation refreshes the
+native fingerprint without silently trusting an unexpected installed app.
+
 Store `$HOME/.config/agent-qa/projects.json` with mode 600. Top-level fields:
 `schema_version: 1`, `axe` (executable), `default_project`, `projects` (name to
 profile), optional `state_dir` and `lock_file`. Keep the default machine-wide
 lock at `/tmp/ios-automation.xcodebuild.lock` when sharing existing iOS tooling.
+`allow_other_booted_devices: true` permits targeting the registered device while
+leaving other booted devices untouched; it does not bypass the shared lock or
+active builds. Read-only Xcode version/SDK probes do not count as active builds.
 
 Each profile contains `kind` (`leafhour`, `tormie`, `supabase`), `server` (one
 HTTPS origin), `email`, `expected_user_id`, `bundle_id`, `simulator_id`,

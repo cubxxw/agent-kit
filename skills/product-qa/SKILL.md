@@ -10,6 +10,15 @@ app. The private machine registry lives at `$HOME/.config/agent-qa/projects.json
 Do not print it: it contains private server and identity configuration. The
 password is referenced by OS keychain service/account and is read at runtime.
 
+For a new simulator build, review its actual backend selection, then use
+`agent-qa prepare <project> --app <simulator.app> --reviewed-origin <origin>`.
+This copies the build to a private QA artifact, applies local ad-hoc simulator
+signing with a per-app keychain access group, installs it and pins the resulting
+app tree. The original build is preserved. Unsigned simulator builds can pass
+password authentication yet fail to save a native session; do not work around
+that failure with plaintext storage or repeated password attempts. Physical
+device builds and publishing are excluded from preparation.
+
 `agent-qa open` checks the password against the pinned server, confirms its
 canonical account UUID/email, revokes only that temporary verification session,
 and launches the registered installed build. It uses the real login UI when

@@ -213,6 +213,32 @@ class ProductQATests(unittest.TestCase):
         self.assertIn("--element-type",run.call_args.args[0])
         self.assertIn("Button",run.call_args.args[0])
 
+    def test_xcode_metadata_probe_is_not_an_active_build(self):
+        class Result:
+            returncode=0
+            def __init__(self,stdout):self.stdout=stdout
+        with patch.object(self.qa.subprocess,"run",side_effect=[Result("123\n"),Result("/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -version")]):
+            self.assertFalse(self.qa.active_builds())
+
+    def test_real_xcode_test_still_reserves_the_machine(self):
+        class Result:
+            returncode=0
+            def __init__(self,stdout):self.stdout=stdout
+        with patch.object(self.qa.subprocess,"run",side_effect=[Result("123\n"),Result("/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -scheme Example")]):
+            self.assertTrue(self.qa.active_builds())
+
+    def test_qa_signing_assigns_an_isolated_keychain_group(self):
+        original={"keychain-access-groups":["FOREIGN.production"],"com.apple.security.application-groups":["group.example.qa"]}
+        result=self.qa.qa_entitlements("com.example.qa",original)
+        self.assertEqual("AGENTQA000.com.example.qa",result["application-identifier"])
+        self.assertEqual(["AGENTQA000.com.example.qa"],result["keychain-access-groups"])
+        self.assertEqual(original["com.apple.security.application-groups"],result["com.apple.security.application-groups"])
+        self.assertEqual(["FOREIGN.production"],original["keychain-access-groups"])
+
+    def test_prepare_refuses_an_unreviewed_server_before_copying_a_build(self):
+        with self.assertRaises(self.qa.QAError):
+            self.qa.prepare_build({"projects":{"example":profile()}},Path("unused"),"example",Path("missing.app"),"https://foreign.example.invalid")
+
 
 if __name__ == "__main__":
     unittest.main()
